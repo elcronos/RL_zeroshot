@@ -124,5 +124,6 @@ uv run rogue-rl summarize runs/frozen-* runs/scratch-* runs/residual-* --split t
 - Loopback mGBA Lua transport with request/decision sequencing, frame and wall-clock limits, explicit game errors, and ROM-specific symbol profiles.
 
 Read [the experiment design](docs/experiment.md), [Laya backend details](docs/laya.md), and [verification evidence and limits](docs/verification.md).
+For future systems, follow [the model integration guide](docs/adding-models.md): it preserves the public-information boundary and makes both zero-shot and residual-policy results comparable.
 
 The ANE model has a strict 96-token limit. The default makes **one compact binary-quality query per legal action**, then normalizes those scores. This is an explicitly constructed prior, not Laya's joint categorical output. The optional `joint` strategy with the explicit `general1024` model tests that distinction. Oversized inputs fail before truncation. Benchmark the actual full decision with `uv run python scripts/benchmark_laya.py`; upstream's ~5 ms single-query result is not a full battle-turn timing.
