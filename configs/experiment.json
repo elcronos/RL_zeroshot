@@ -1,0 +1,39 @@
+{
+  "rom_path": "data/rogue-research.gba",
+  "corpus_path": "data/battles.json",
+  "mgba": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "timeout": 30.0,
+    "max_frames": 18000,
+    "profile_path": "data/rogue-profile.json"
+  },
+  "laya": {
+    "preset": "ane96",
+    "strategy": "action_scores",
+    "model_dir": "models/laya-ane96",
+    "cache_size": 4096,
+    "probability_floor": 0.000001
+  },
+  "experiment": {
+    "total_steps": 100000,
+    "rollout_steps": 256,
+    "eval_every": 5000,
+    "eval_repeats": 1,
+    "max_decisions": 500,
+    "hidden_dim": 128,
+    "alpha": 1.0,
+    "ppo": {
+      "learning_rate": 0.0003,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_coef": 0.2,
+      "value_coef": 0.5,
+      "entropy_coef": 0.01,
+      "kl_coef": 0.05,
+      "max_grad_norm": 0.5,
+      "epochs": 4,
+      "minibatch_size": 64
+    }
+  }
+}

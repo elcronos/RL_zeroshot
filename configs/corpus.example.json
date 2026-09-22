@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "rom_sha256": "REPLACE_WITH_REAL_ROM_SHA256",
+  "source_revision": "REPLACE_WITH_PINNED_RESEARCH_BUILD_REVISION",
+  "battles": [
+    {
+      "id": "train-team001-opponent001-rng001",
+      "split": "train",
+      "scenario_group": "team001-opponent001",
+      "seed": 1,
+      "state_path": "states/train-001.ss0",
+      "state_sha256": "REPLACE_WITH_REAL_SAVE_STATE_SHA256"
+    },
+    {
+      "id": "validation-team002-opponent002-rng002",
+      "split": "validation",
+      "scenario_group": "team002-opponent002",
+      "seed": 2,
+      "state_path": "states/validation-002.ss0",
+      "state_sha256": "REPLACE_WITH_REAL_SAVE_STATE_SHA256"
+    },
+    {
+      "id": "test-team003-opponent003-rng003",
+      "split": "test",
+      "scenario_group": "team003-opponent003",
+      "seed": 3,
+      "state_path": "states/test-003.ss0",
+      "state_sha256": "REPLACE_WITH_REAL_SAVE_STATE_SHA256"
+    }
+  ]
+}
