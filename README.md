@@ -34,7 +34,7 @@ Each model stays frozen. PPO can learn a small correction to its action distribu
 1. **Zero-shot:** frozen model choice changes held-out battle quality relative to uniform legal action sampling.
 2. **Policy steering:** a residual PPO policy improves a frozen prior on held-out battle groups without modifying the prior's weights.
 
-The primary score is scenario-weighted battle win rate. Secondary outcomes are loss/draw/truncation rate, decisions to termination, final player-party HP fraction, action diversity, inference latency, and residual argmax-override rate. Save-state RNG variants are clustered by player-team plus opposing-trainer matchup before statistics, so repeats do not inflate the sample size.
+The primary score is scenario-weighted held-out win rate. A residual policy is better only when its paired win-rate difference over its own frozen prior is positive and its 95% paired interval excludes zero. Decisions, final party HP, truncation, action diversity, and latency explain tied results but do not override the primary result. See [the full scoring rule](docs/scoring.md).
 
 ### What the policies see
 
@@ -123,7 +123,7 @@ uv run rogue-rl summarize runs/frozen-* runs/scratch-* runs/residual-* --split t
 - Hashed battle corpus, scenario-group split checks, evaluation traces of prior/final probabilities, learning curves, and paired seed/scenario bootstrap comparisons.
 - Loopback mGBA Lua transport with request/decision sequencing, frame and wall-clock limits, explicit game errors, and ROM-specific symbol profiles.
 
-Read [the experiment design](docs/experiment.md), [Laya backend details](docs/laya.md), and [verification evidence and limits](docs/verification.md).
+Read [the experiment design](docs/experiment.md), [the scoring rule](docs/scoring.md), [Laya backend details](docs/laya.md), and [verification evidence and limits](docs/verification.md).
 For future systems, follow [the model integration guide](docs/adding-models.md): it preserves the public-information boundary and makes both zero-shot and residual-policy results comparable.
 
 The ANE model has a strict 96-token limit. The default makes **one compact binary-quality query per legal action**, then normalizes those scores. This is an explicitly constructed prior, not Laya's joint categorical output. The optional `joint` strategy with the explicit `general1024` model tests that distinction. Oversized inputs fail before truncation. Benchmark the actual full decision with `uv run python scripts/benchmark_laya.py`; upstream's ~5 ms single-query result is not a full battle-turn timing.

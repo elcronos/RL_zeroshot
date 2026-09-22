@@ -14,10 +14,17 @@ six declared player teams.
 | Uniform legal action | 18 / 18 | 5.22 | 0.08 ms | Complete |
 | Jev (OpenRouter) | — | — | — | Not run: valid API credential required |
 
-No policy was trained for this report. Laya and PrismNLI are frozen zero-shot
-baselines; uniform is a no-model control. This is deliberately not presented
-as evidence that one model plays better: all completed policies reached the
-win-rate ceiling, including uniform. The fixture needs harder held-out states
+The primary score is equal-scenario-group held-out win rate; see
+[the scoring rule](scoring.md). Since every completed arm has the same 100%
+win rate, the secondary values in this table are diagnostics only. They cannot
+be used to claim that PrismNLI (fewer decisions) or Laya (lower latency) plays
+better.
+
+No policy was trained for this report, so there is no learned-policy panel to
+compare yet. Laya and PrismNLI are frozen zero-shot baselines; uniform is a
+no-model control. This is deliberately not presented as evidence that one
+model plays better: all completed policies reached the win-rate ceiling,
+including uniform. The fixture needs harder held-out states
 (for example, stronger opposing trainers, unfavorable type matchups, and
 resource-constrained party HP) before residual-training test results can
 meaningfully test the steering hypothesis.

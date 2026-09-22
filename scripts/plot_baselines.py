@@ -18,7 +18,7 @@ def main() -> None:
     for directory in args.runs:
         summary = json.loads((directory / "summary.json").read_text())
         rows.append((summary["prior"], summary))
-    width, height = 940, 170 + 70 * len(rows)
+    width, height = 940, 270 + 70 * len(rows)
     image = Image.new("RGB", (width, height), "#0e1726")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
@@ -34,6 +34,21 @@ def main() -> None:
         draw.text((700, y), f"{win:.0%} wins", fill="white", font=font)
         draw.text((180, y + 30), f"mean decisions {summary['mean_decisions']:.2f}", fill="#b9c6d8", font=font)
         draw.text((430, y + 30), f"p50 decision {summary['median_battle_decision_ms_p50']:.2f} ms", fill="#b9c6d8", font=font)
+    panel_y = 120 + 70 * len(rows)
+    draw.rectangle((30, panel_y, 910, panel_y + 84), outline="#475569", width=2)
+    draw.text((50, panel_y + 16), "POLICY LEARNING / RESIDUAL PPO", fill="white", font=font)
+    draw.text(
+        (50, panel_y + 38),
+        "Not run: uniform, Laya, and PrismNLI each won every held-out fixture battle.",
+        fill="#fbbf24",
+        font=font,
+    )
+    draw.text(
+        (50, panel_y + 58),
+        "Train residual arms only after a harder corpus permits a paired held-out win-rate comparison.",
+        fill="#b9c6d8",
+        font=font,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.output)
 
