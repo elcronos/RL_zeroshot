@@ -173,9 +173,11 @@ def summarize(run_dirs: list[Path], *, split: str = "validation") -> dict:
         meta = json.loads((directory / "metadata.json").read_text())
         metadata.append(meta)
         mode, seed = meta["config"]["mode"], meta["config"]["seed"]
-        if (mode, seed) in seen:
+        prior_name = meta.get("provenance", {}).get("prior_name", "uniform")
+        arm = f"{prior_name}_{mode}"
+        if (arm, seed) in seen:
             raise ValueError("Duplicate arm/seed runs; choose one preregistered run per arm/seed")
-        seen.add((mode, seed))
+        seen.add((arm, seed))
         rows = read_jsonl(directory / ("test-evaluation.jsonl" if split == "test" else "evaluation.jsonl"))
         rows = [row for row in rows if row["split"] == split]
         if not rows:
@@ -184,9 +186,9 @@ def summarize(run_dirs: list[Path], *, split: str = "validation") -> dict:
         if final_step != meta["config"]["total_steps"]:
             raise ValueError("Final result must use the complete, fixed-budget checkpoint")
         for row in rows:
-            curves[mode, row["train_steps"]].append(row)
+            curves[arm, row["train_steps"]].append(row)
             if row["train_steps"] == final_step:
-                final[mode].append(row)
+                final[arm].append(row)
     for field in ("corpus_sha256", "rom_sha256", "source_revision", "feature_version"):
         if len({str(meta[field]) for meta in metadata}) > 1:
             raise ValueError(f"Runs disagree on {field}")
@@ -196,6 +198,11 @@ def summarize(run_dirs: list[Path], *, split: str = "validation") -> dict:
     points = []
     for (mode, steps), rows in sorted(curves.items()):
         scores = _group_scores(rows)
+        party_hp = [
+            row["final_party_hp_fraction"]
+            for row in rows
+            if row["final_party_hp_fraction"] is not None
+        ]
         points.append(
             {
                 "mode": mode,
@@ -205,14 +212,20 @@ def summarize(run_dirs: list[Path], *, split: str = "validation") -> dict:
                 "episodes": len(rows),
                 "truncation_rate": float(np.mean([row["outcome"] == "truncated" for row in rows])),
                 "mean_decisions": float(np.mean([row["decisions"] for row in rows])),
+                "mean_turns": float(np.mean([row["turns"] for row in rows])),
+                "mean_final_party_hp_fraction": float(np.mean(party_hp)) if party_hp else None,
+                "mean_battle_score": float(np.mean([row["battle_score"] for row in rows])),
                 "mean_prior_kl": float(np.mean([row["mean_prior_kl"] for row in rows])),
             }
         )
     comparisons = {}
-    if "residual" in final:
-        for other in ("frozen", "scratch", "uniform_residual", "shuffled_residual"):
-            if other in final:
-                comparisons[f"residual_minus_{other}"] = paired_comparison(final["residual"], final[other])
+    for prior_name in ("laya", "prism", "jev"):
+        residual = f"{prior_name}_residual"
+        frozen = f"{prior_name}_frozen"
+        if residual in final and frozen in final:
+            comparisons[f"{residual}_minus_{frozen}"] = paired_comparison(
+                final[residual], final[frozen]
+            )
     auc = {}
     for mode in final:
         series = sorted((point for point in points if point["mode"] == mode), key=lambda x: x["train_steps"])

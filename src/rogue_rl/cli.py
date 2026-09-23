@@ -209,6 +209,14 @@ def _baseline(settings: dict, corpus: Corpus, args: argparse.Namespace) -> dict:
         "laya": laya.provenance if laya is not None else None,
         "prior_provenance": getattr(prior, "provenance", None),
         "started_unix_seconds": time.time(),
+        "dataset": {
+            "training_battles_used": 0,
+            "evaluation_split": args.split,
+            "evaluation_battles": len(battles),
+            "corpus_train_battles": len(corpus.split("train")),
+            "corpus_validation_battles": len(corpus.split("validation")),
+            "corpus_test_battles": len(corpus.split("test")),
+        },
     }
     (args.output / "metadata.json").write_text(json.dumps(metadata, indent=2, allow_nan=False) + "\n")
     failure = None
@@ -244,6 +252,8 @@ def _baseline(settings: dict, corpus: Corpus, args: argparse.Namespace) -> dict:
         )
         summary["split"] = args.split
         summary["prior"] = args.prior
+        summary["training_battles_used"] = 0
+        summary["evaluation_battles"] = len(battles)
         if failure:
             summary["failure"] = f"{type(failure).__name__}: {failure}"
         (args.output / "summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")

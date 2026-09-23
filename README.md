@@ -1,129 +1,235 @@
-# Frozen decision models + residual RL in Pokémon Emerald Rogue
+# Decision models learn to battle in Pokémon Emerald Rogue
 
-This is a reproducible experiment for a practical question: **can a frozen decision model play unseen Pokémon Emerald Rogue trainer battles, and can a small learned policy reliably improve it without changing model weights?** It follows the comparison spirit of [Jev vs open decision models](https://github.com/elcronos/jev-vs-open-decision-models), but grounds every decision in a real, visible mGBA battle.
+This repository asks two questions using real trainer battles running in mGBA:
 
-The benchmark compares frozen **Laya**, frozen **PrismNLI-0.4B**, and hosted typed-decision **Jev** on exactly matched held-out battle states. A separate PPO residual can be trained above each frozen action distribution. That is policy learning, **not fine-tuning**: no Laya, PrismNLI, or Jev parameter is updated.
+1. How well do **PrismNLI-0.4B, Laya, Jev, and uniform random legal actions** play unseen battles with no game-specific training?
+2. Can a small learned policy improve PrismNLI, Laya, or Jev on the same held-out battles while the underlying model stays frozen?
 
-**Current status:** the hash-verified corpus contains 172 states (144 train / 10 validation / 18 test). Laya, PrismNLI, and uniform each won all 18 held-out fixture episodes, so this initial corpus has a win-rate ceiling and cannot rank them. See [the recorded held-out result](docs/results.md); Jev awaits a valid OpenRouter credential.
+The model is never fine-tuned. Training updates only a small residual PPO policy that steers the model's action probabilities. Uniform random is a zero-shot control and is not trained.
 
-## Experiment idea
+## Current results
 
-The question is whether a fast frozen model gives reinforcement learning a useful starting point for real Pokémon Emerald Rogue trainer battles. Each method receives the same public battle information and can choose only legal moves or switches. The game supplies the actual outcome; no simulator rewards or fabricated victories are used.
+The reproducible pilot corpus contains **172 saved Rogue battles**:
+
+| Split | Battles | Scenario groups | Used for |
+| --- | ---: | ---: | --- |
+| Train | 144 | 39 | Residual PPO updates |
+| Validation | 10 | 6 | Selecting the policy configuration without touching test |
+| Test | 18 | 6 | Final zero-shot and trained-policy comparison |
+
+The first zero-shot test is complete for PrismNLI, Laya, and uniform. Jev needs a valid OpenRouter credential. Residual policies have not been run yet, so the trained rows are explicitly marked `not run` rather than inferred or fabricated.
+
+| Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 2.61 | 92.4% | 92.1 / 100 |
+| Laya zero shot | 0 | 0 | 18 | 18/18 | 6.17 | 83.5% | 85.3 / 100 |
+| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 4.17 | 84.5% | 87.4 / 100 |
+| Jev zero shot | 0 | 0 | 18 | — | — | — | Not run |
+| PrismNLI + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
+| Laya + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
+| Jev + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
+
+![Zero-shot model comparison](docs/assets/zero-shot-performance.png)
+
+![Frozen model versus trained policy](docs/assets/trained-policy-performance.png)
+
+All completed zero-shot arms won every test battle, so win rate alone cannot separate them. The battle score adds granularity: PrismNLI won faster and retained more party HP on this fixture. This remains a small pilot, not evidence of general Pokémon mastery.
+
+## Experiment
 
 ```mermaid
 flowchart LR
-    S[Hash-locked pre-battle mGBA save state] --> G[Instrumented real Rogue battle]
-    G --> O[Public observation]
-    O --> L[Frozen Laya prior]
-    O --> N[Frozen PrismNLI prior]
-    O --> J[Hosted TypeSafe Jev prior]
-    O --> U[Uniform legal-action control]
-    L --> P[Optional PPO residual policy]
-    N --> P
-    P --> A[Legal move or switch]
-    J --> A
-    U --> A
-    A --> G
-    G --> R[Win, loss, draw and diagnostics]
+    C[172 captured mGBA battles] --> TR[Train: 144 battles / 39 groups]
+    C --> VA[Validation: 10 battles / 6 groups]
+    C --> TE[Test: 18 battles / 6 groups]
+    TE --> Z[Zero shot]
+    Z --> ZP[PrismNLI]
+    Z --> ZL[Laya]
+    Z --> ZJ[Jev]
+    Z --> ZU[Uniform random]
+    TR --> PPO[Residual PPO policy]
+    VA --> SELECT[Select configuration by validation score]
+    PPO --> SELECT
+    SELECT --> TP[PrismNLI + policy]
+    SELECT --> TL[Laya + policy]
+    SELECT --> TJ[Jev + policy]
+    ZP --> COMPARE[Held-out test comparison]
+    ZL --> COMPARE
+    ZJ --> COMPARE
+    ZU --> COMPARE
+    TP --> COMPARE
+    TL --> COMPARE
+    TJ --> COMPARE
+    TE --> COMPARE
 ```
 
-Each model stays frozen. PPO can learn a small correction to its action distribution from training battles, while the uniform control measures the strength of random legal choices under identical conditions. Jev is an independent typed-choice prior, not a PPO policy or a replacement for the local models.
+Every arm sees the same public battle observation and engine-supplied legal action mask. Actions are four move slots plus six absolute party-switch slots. The experiment never reveals the opponent's hidden moves, held item, ability, exact HP, bench, or RNG state.
 
-### Hypotheses and success criteria
+| Model | Frozen primitive used as the action prior |
+| --- | --- |
+| PrismNLI-0.4B | Entailment score for “this is a good action to win” |
+| Laya | One binary Noul quality score per legal action |
+| Jev | Typed Choice probabilities from the hosted Decisions API |
+| Uniform random | Equal probability over legal actions; control only |
 
-1. **Zero-shot:** frozen model choice changes held-out battle quality relative to uniform legal action sampling.
-2. **Policy steering:** a residual PPO policy improves a frozen prior on held-out battle groups without modifying the prior's weights.
+For the trained arms, PPO learns residual logits on top of the fixed prior:
 
-The primary score is scenario-weighted held-out win rate. A residual policy is better only when its paired win-rate difference over its own frozen prior is positive and its 95% paired interval excludes zero. Decisions, final party HP, truncation, action diversity, and latency explain tied results but do not override the primary result. See [the full scoring rule](docs/scoring.md).
+```text
+final_policy = softmax(log(frozen_prior) + residual_policy(observation))
+```
 
-### What the policies see
+PrismNLI, Laya, and Jev weights never enter the optimizer.
 
-The observation deliberately contains only information a player can see:
+## How battle quality is measured
 
-- The active player Pokémon's current exact HP, max HP, level, public types, status, stat stages, and four moves with PP, type, power, category, and accuracy.
-- The active enemy's visible species/types, level, status, stat stages, and displayed HP fraction. It never includes hidden enemy moves, held item, ability, exact HP, or unseen bench Pokémon.
-- Every player party slot, including current HP and public types, so a policy can select a legal switch.
-- Episode-local history: the previous chosen action and the change in player/enemy HP fraction since the previous decision. `FeatureEncoder` derives those fields; mGBA does not leak private memory.
+The game outcome remains the primary result. Within the same outcome, a battle is better when it finishes quickly and preserves the team. For a win with final party HP fraction `H` and game-reported turns `T`:
 
-The numerical PPO policy receives these normalized values. Laya and Jev receive a compact text version of the same public information and the descriptions of every legal action. Trainer battles can contain multiple opposing Pokémon: the bridge observes the currently active opponent and the battle continues through each normal send-out until its terminal result.
+```text
+win_quality = 100 × (0.65 × H + 0.35 × exp(-T / 6))
+battle_score = 50 + 0.5 × win_quality
+```
 
-### Visual examples
+This makes a two-turn full-health win score much better than a ten-turn win at half health, while every win still scores above a draw, loss, or truncation.
 
-The replay below is a real frozen-Laya trajectory. The upper portion is an mGBA capture of the game's own Fight menu, including the original move names and PP/type box; the lower panel retains the selected action and calibrated action probabilities. The capture temporarily opens Fight from the saved decision and restores that exact decision before the policy acts.
+| Outcome | Battle score |
+| --- | --- |
+| Win | 50–100, based on party HP and turns |
+| Draw | 25 |
+| Loss | 0–20, based on remaining party HP |
+| Truncation | 0 |
 
-These held-out zero-shot replays show mGBA's unmodified Fight menu (real move names, PP, and type box), with the policy distribution in a separate lower panel.
+The final table always reports raw wins, turns, party HP, and battle score so the scalar can be audited. Latency, action diversity, switch rate, residual KL, and argmax override rate are additional diagnostics.
 
-![Laya held-out battle replay](docs/assets/laya-zero-shot-test.gif)
+Policy configurations are chosen on validation in this order: scenario-weighted win rate, mean battle score, final party HP, then fewer turns. The test set is used once after selection. Results are averaged across learner seeds 0–4; the best-looking test seed is never selected for publication. See [the complete scoring rule](docs/scoring.md).
 
-![PrismNLI held-out battle replay](docs/assets/prism-zero-shot-test.gif)
+## Reproduce the environment
 
-The matched uniform replay uses the same saved battle and seed, making its different action path easy to inspect.
-
-## Setup
-
-Use Apple Silicon, macOS 15+, and Python 3.11–3.13. The supplied environment uses Python 3.12; the machine's default Python 3.14 is outside the upstream CoreML support range.
+Requirements are Apple Silicon, macOS 15+, Python 3.11–3.13, mGBA 0.10.5, `uv`, and a legally obtained Pokémon Emerald ROM used to build Emerald Rogue. ROMs, model weights, save states, credentials, and run outputs are ignored by Git.
 
 ```sh
+git clone https://github.com/elcronos/RL_zeroshot.git
+cd RL_zeroshot
 uv sync --extra laya --extra prism --extra test
 uv run python scripts/setup_laya.py
-uv run rogue-rl doctor
 uv run pytest -q
 ```
 
-Alternatively, install `.[laya,test]` in a Python 3.12 virtual environment. `setup_laya.py` downloads about 649 MiB once, pins the upstream artifact revision, verifies its checksum inventory, and writes a receipt. Experiments use local files only. Dependencies are recorded in `uv.lock`.
+Follow [the mGBA research-ROM guide](docs/mgba.md) to pin the Rogue source, install the research hooks, build the ROM, generate its symbol profile, and build the headless mGBA host.
 
-On this machine mGBA 0.10.5 is installed at `/Applications/mGBA.app`; the model is downloaded under `models/laya-ane96`. Model weights, ROMs, save states, and experiment outputs are ignored by Git.
+### Recreate the 172-battle corpus
 
-## Game setup and execution
-
-Follow [the mGBA integration instructions](docs/mgba.md) to reproduce the source build and capture battle states. The ROM and profile are already generated in this workspace. This implementation needs the research build; a normal downloaded Rogue ROM is not interchangeable with it.
-
-1. The locally built research ROM is already at `data/rogue-research.gba` with its generated profile at `data/rogue-profile.json`.
-2. Create `data/battles.json` using the schema in `configs/corpus.example.json`. Assign whole team/opponent scenario groups to train, validation, or test before training. Record actual ROM/state SHA256 hashes.
-3. Load the ROM in mGBA and load the generated `data/rogue-profile.lua` through **Tools → Scripting**. Keep emulation running. Use fast text and consistent animation settings across states; uncapped speed is allowed.
-4. Validate the assets and replay determinism, then run the fixed-budget experiment.
-
-A headless mGBA host is also available. Run `.cache/mgba-runner data/rogue-research.gba data/rogue-profile.lua` instead of step 3. Stop it with Ctrl-C. Reproduce the boot/transport check with `uv run python scripts/smoke_mgba.py`; see the integration guide to rebuild the host.
-
-For a visible live replay, run `scripts/start_live_mgba.sh`, load `data/rogue-profile.lua` through **Tools → Scripting**, and run `rogue-rl visual` from a terminal. The visible game screen continues to animate while the policy controls it.
+Independent capture lanes use disjoint timing offsets. Each state records its ROM hash, state hash, RNG value, opponent trainer, and three-Pokémon player team.
 
 ```sh
+uv run python scripts/collect_battles.py --count 100 --prefix benchmark \
+  --states data/capture-main --manifest data/capture-main.json
+uv run python scripts/collect_battles.py --count 24 --prefix benchmark-a \
+  --index-offset 200 --states data/capture-a --manifest data/capture-a.json
+uv run python scripts/collect_battles.py --count 24 --prefix benchmark-b \
+  --index-offset 400 --states data/capture-b --manifest data/capture-b.json
+uv run python scripts/collect_battles.py --count 24 --prefix benchmark-d \
+  --index-offset 500 --states data/capture-d --manifest data/capture-d.json
+
+uv run python scripts/merge_corpora.py \
+  data/capture-main.json data/capture-a.json data/capture-b.json data/capture-d.json \
+  --output data/battles.json
+uv run python scripts/split_battles.py --manifest data/battles.json --min-train 50
 uv run rogue-rl validate-corpus
 uv run rogue-rl verify-game --steps 500
-uv run python scripts/collect_battles.py --count 100 --prefix benchmark
-uv run python scripts/split_battles.py --min-train 50
-uv run rogue-rl baseline --prior laya --split test --output runs/laya-zero-shot-test
-uv run rogue-rl baseline --prior prism --split test --output runs/prism-zero-shot-test
-# Jev requires a valid OPENROUTER_API_KEY; it never falls back to another model.
-uv run rogue-rl baseline --prior jev --split test --output runs/jev-zero-shot-test
-uv run rogue-rl visual --prior laya --split test --output runs/visual-laya
-
-uv run rogue-rl train --mode residual --prior laya  --seed 0 --output runs/laya-residual-0
-uv run rogue-rl train --mode residual --prior prism --seed 0 --output runs/prism-residual-0
-uv run rogue-rl train --mode residual --prior jev   --seed 0 --output runs/jev-residual-0
 ```
 
-Repeat all arms for learner seeds **0–4**, sequentially when sharing one emulator. `configs/experiment.json` fixes the budget at 100,000 policy decisions, validation every 5,000 decisions, and at most 500 decisions per battle. First run a separate small engineering pilot; freeze the final configuration before evaluating test data. No CLI command silently substitutes a fake environment or prior.
+Splitting happens by complete player-team/opponent-trainer scenario group, so RNG variants of one matchup cannot cross train, validation, and test.
+
+Start the headless host before running experiments:
 
 ```sh
-uv run rogue-rl summarize runs/frozen-* runs/scratch-* runs/residual-* --output runs/validation-summary.json
-uv run rogue-rl evaluate --checkpoint runs/residual-0/checkpoint-000100000.pt
-# Evaluate each other final arm/seed checkpoint once, then:
-uv run rogue-rl summarize runs/frozen-* runs/scratch-* runs/residual-* --split test --output runs/test-summary.json
+.cache/mgba-runner data/rogue-research.gba data/rogue-profile.lua
 ```
 
-`evaluate` requires the final budget checkpoint and matching corpus, ROM, profile, and model provenance. It refuses to overwrite test results. Checkpoints are for evaluation; interrupted optimizer-resume is not implemented. Failed runs remain incomplete and are excluded from the final summary.
+For a visible emulator window, use `scripts/start_live_mgba.sh`, load `data/rogue-profile.lua` through mGBA's **Tools → Scripting**, and run the same commands below.
 
-## What is implemented
+## Run the zero-shot benchmark
 
-- Frozen Laya, matched-capacity scratch PPO, residual PPO, uniform-prior and shuffled-prior controls, and an optional gated-logit residual ablation.
-- Ten stable action slots: four moves and six absolute party slots. The game engine supplies legality, including forced switches and Struggle. No bags, fleeing, catching, routes, or team drafting.
-- Public-information observations. Hidden opponent moves, ability, item, exact HP, bench, and RNG never reach the policy. The learner's numerical features omit species and move identity; Laya and Jev receive compact semantic text.
-- Sparse `+1/-1/0` win/loss/draw reward, PPO clipping, prior KL regularization, and time-limit-correct GAE. Evaluation runs without updates.
-- Hashed battle corpus, scenario-group split checks, evaluation traces of prior/final probabilities, learning curves, and paired seed/scenario bootstrap comparisons.
-- Loopback mGBA Lua transport with request/decision sequencing, frame and wall-clock limits, explicit game errors, and ROM-specific symbol profiles.
+Each command uses all 18 held-out test battles and zero training battles.
 
-Read [the experiment design](docs/experiment.md), [the scoring rule](docs/scoring.md), [Laya backend details](docs/laya.md), and [verification evidence and limits](docs/verification.md).
-For future systems, follow [the model integration guide](docs/adding-models.md): it preserves the public-information boundary and makes both zero-shot and residual-policy results comparable.
+```sh
+uv run rogue-rl baseline --prior prism --split test --output runs/prism-zero-shot-test
+uv run rogue-rl baseline --prior laya --split test --output runs/laya-zero-shot-test
+uv run rogue-rl baseline --prior uniform --split test --output runs/uniform-zero-shot-test
 
-The ANE model has a strict 96-token limit. The default makes **one compact binary-quality query per legal action**, then normalizes those scores. This is an explicitly constructed prior, not Laya's joint categorical output. The optional `joint` strategy with the explicit `general1024` model tests that distinction. Oversized inputs fail before truncation. Benchmark the actual full decision with `uv run python scripts/benchmark_laya.py`; upstream's ~5 ms single-query result is not a full battle-turn timing.
+export OPENROUTER_API_KEY="your-key"
+uv run rogue-rl baseline --prior jev --split test --output runs/jev-zero-shot-test
+```
+
+Every run writes `metadata.json`, raw `episodes.jsonl`, a first-battle decision trace, and `summary.json`. Provider failures remain failed runs; no model falls back to uniform or another backend.
+
+## Train the residual policies
+
+Train PrismNLI, Laya, and Jev with the same 144 training battles, 10 validation battles, 100,000 policy decisions, and learner seeds 0–4. Uniform stays a zero-shot random control.
+
+```sh
+for prior in prism laya jev; do
+  for seed in 0 1 2 3 4; do
+    uv run rogue-rl train --mode residual --prior "$prior" --seed "$seed" \
+      --output "runs/${prior}-residual-${seed}"
+  done
+done
+```
+
+Training evaluates validation every 5,000 decisions. Compare candidate settings only on those validation records, lock the selected configuration, and evaluate the final fixed-budget checkpoint once on test:
+
+```sh
+for prior in prism laya jev; do
+  for seed in 0 1 2 3 4; do
+    uv run rogue-rl evaluate \
+      --checkpoint "runs/${prior}-residual-${seed}/checkpoint-000100000.pt"
+  done
+done
+```
+
+Summarize the validation curves and held-out policy results:
+
+```sh
+uv run rogue-rl summarize runs/*-residual-* \
+  --output runs/validation-summary.json
+uv run rogue-rl summarize runs/*-residual-* --split test \
+  --output runs/test-summary.json
+```
+
+Use the validation curves to select the policy configuration lexicographically
+by wins, battle score, party HP, and then fewer turns. The published test row
+uses the locked 100,000-step configuration and aggregates all five
+preregistered learner seeds; it never selects the luckiest test seed or test
+checkpoint.
+
+Update the checked-in result registry from verified run summaries, then rebuild both publication plots:
+
+```sh
+uv run python scripts/plot_results.py \
+  --results docs/results.json --output-dir docs/assets
+```
+
+The registry currently marks unfinished Jev and residual-policy arms as `not_run`. A missing result is never rendered as a zero score.
+
+## Visual replays
+
+```sh
+uv run rogue-rl visual --prior prism --split test --output runs/visual-prism
+uv run rogue-rl visual --prior laya --split test --output runs/visual-laya
+uv run rogue-rl visual --prior jev --split test --output runs/visual-jev
+```
+
+The GIF uses mGBA's real move-selection menu, including move names, PP, and type. The separate panel shows the model's full legal-action distribution.
+
+![Laya held-out replay](docs/assets/laya-zero-shot-test.gif)
+
+![PrismNLI held-out replay](docs/assets/prism-zero-shot-test.gif)
+
+## Documentation
+
+- [Experimental protocol](docs/experiment.md)
+- [Scoring and statistical decision rules](docs/scoring.md)
+- [Connect another model](docs/adding-models.md)
+- [mGBA integration and research ROM](docs/mgba.md)
+- [Current recorded results](docs/results.md)
+- [Verification evidence and limitations](docs/verification.md)

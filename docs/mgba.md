@@ -72,35 +72,29 @@ fixture; the Rogue trainer selection, party generation and battle engine are
 the game's own. It is appropriate for checking the bridge and comparing action
 priors, and is not a representative general-play corpus.
 
-Build the headless host, then capture distinct route-trainer states:
+Build the headless host, then follow the exact multi-lane 172-state capture,
+merge, split, and verification recipe in the repository README:
 
 ```sh
 bash scripts/build_mgba_host.sh
-uv run python scripts/collect_battles.py --count 10
-uv run rogue-rl validate-corpus
-uv run rogue-rl verify-game --steps 100
 ```
 
-The collector saves states, screenshots and capture receipts under
-`data/states/`, records their SHA256 hashes in `data/battles.json`, and refuses
-to overwrite a corpus. Use `--append` only to add additional captures from the
-same ROM. Its varied title-screen wait samples the game RNG; capture metadata
-records the resulting RNG seed and selected trainer. The first policy action is
-still captured with research mode disabled.
+The collector records each state, screenshot, SHA256, RNG value, trainer, and
+three-Pokémon player team. It refuses to overwrite an existing capture. Use
+`scripts/merge_corpora.py` to combine independent lanes, then split whole
+team/trainer scenario groups with `scripts/split_battles.py`.
 
 To run a direct prior baseline on that corpus:
 
 ```sh
-uv run rogue-rl baseline --prior laya --split train --output runs/laya-pilot
-uv run rogue-rl baseline --prior uniform --split train --output runs/uniform-pilot
-uv run rogue-rl compare-baselines runs/laya-pilot runs/uniform-pilot --output runs/comparison.json
-uv run rogue-rl visual --prior laya --split train --battle-id pilot-trainer191-rng2303321540-000 --output runs/visual-laya
+uv run rogue-rl baseline --prior prism --split test --output runs/prism-zero-shot-test
+uv run rogue-rl baseline --prior laya --split test --output runs/laya-zero-shot-test
+uv run rogue-rl baseline --prior uniform --split test --output runs/uniform-zero-shot-test
+uv run rogue-rl visual --prior laya --split test --output runs/visual-laya
 ```
 
-The current results are recorded in `docs/pilot-results.md`. Do not promote
-this fixture corpus to validation/test evidence. Capture normal runs with a
-range of parties, route tiers and battle mechanics before the residual-RL
-experiment.
+The current results are recorded in `docs/results.md`; the protocol and split
+counts are defined in the README.
 
 ### Manual collection for the full experiment
 

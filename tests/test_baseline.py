@@ -137,6 +137,15 @@ def test_baseline_writes_real_episode_rows_trace_and_summary(tmp_path, monkeypat
     meta = json.loads((output / "metadata.json").read_text())
     assert meta["rom_sha256"] == sha256_file(tmp_path / "fixture.gba")
     assert meta["mgba_bridge"]["protocol"] == 1
+    assert meta["dataset"] == {
+        "training_battles_used": 0,
+        "evaluation_split": "train",
+        "evaluation_battles": 2,
+        "corpus_train_battles": 2,
+        "corpus_validation_battles": 0,
+        "corpus_test_battles": 0,
+    }
+    assert summary["training_battles_used"] == 0 and summary["evaluation_battles"] == 2
 
 
 def test_uniform_comparator_uses_same_battles_without_loading_laya(tmp_path, monkeypatch):

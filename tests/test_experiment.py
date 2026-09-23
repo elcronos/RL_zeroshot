@@ -130,6 +130,13 @@ def test_training_checkpoint_evaluation_lifecycle(tmp_path, monkeypatch):
     assert loaded_config == config
     assert saved["steps"] == 7
     assert saved["provenance"] == {"fixture": True}
+    metadata = json.loads((output / "metadata.json").read_text())
+    assert metadata["dataset"] == {
+        "training_battles": 1,
+        "validation_battles": 1,
+        "test_battles": 1,
+        "training_battles_used": 1,
+    }
     assert policy is not None and not policy.training
     assert sum(batch.actions.numel() for batch in batches) == 7
     assert [row["train_steps"] for row in read_rows(output / "progress.jsonl")] == [0, 3, 6, 7]

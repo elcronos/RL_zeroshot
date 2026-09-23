@@ -2,7 +2,7 @@
 
 ## Question and scope
 
-Does a frozen, fast typed-decision model reduce the experience needed for a small reinforcement learner to win held-out **Pokémon Emerald Rogue trainer singles battles**? The target is sample efficiency and transfer across procedural battle scenarios, not a novelty claim for residual RL and not a claim that Laya already understands Pokémon.
+How well do frozen PrismNLI-0.4B, Laya, Jev, and uniform random legal actions play held-out **Pokémon Emerald Rogue trainer singles battles**? After that zero-shot comparison, does a small residual policy improve each real model without fine-tuning it?
 
 This follows the [shared proposal](https://chatgpt.com/share/6ab143f4-8ef8-83ec-a2f7-e6632c449cdc), with two explicit adaptations: only Rogue battles are included; compact per-action scores make the ANE L96 model usable. Battle Factory and all other games are excluded.
 
@@ -19,12 +19,13 @@ The MLP has two 128-unit tanh layers with actor and critic heads. The residual a
 
 | Arm | Prior | Learning |
 |---|---|---|
-| `frozen` | Real Laya | None |
-| `scratch` | Uniform legal | PPO from scratch |
-| `residual` | Real Laya | PPO + KL(pi || p0) |
-| `uniform_residual` | Uniform legal | Residual PPO + KL control |
-| `shuffled_residual` | Real Laya probabilities permuted over legal actions | Same residual PPO |
-| `gated` | Real Laya | Learned scalar sigmoid gate on residual logits |
+| Zero-shot PrismNLI | Frozen entailment action scores | None; 0 training battles |
+| Zero-shot Laya | Frozen Noul action scores | None; 0 training battles |
+| Zero-shot Jev | Frozen typed Choice probabilities | None; 0 training battles |
+| Uniform random | Uniform over legal actions | None; zero-shot control only |
+| Trained PrismNLI policy | Frozen PrismNLI prior | Residual PPO + KL(pi || p0) |
+| Trained Laya policy | Frozen Laya prior | Residual PPO + KL(pi || p0) |
+| Trained Jev policy | Frozen Jev prior | Residual PPO + KL(pi || p0) |
 
 The gated ablation scales `delta`; it is **not** the probability-mixture gate discussed as another option in the conversation. It has extra gate parameters and is not a primary capacity-matched comparison. Supervised adapters are outside this implementation because no demonstration corpus is available.
 
@@ -56,7 +57,7 @@ A 500-decision cap is a truncation, not a game loss or draw. GAE bootstraps from
 
 Evaluation uses no gradients or optimizer updates. It samples the policy with reproducible action RNG paired by learner seed, battle ID, and repeat. It does not switch to greedy selection for only one arm. Same seed/checkpoint repeats make frozen Laya curves flat under deterministic game replay. Training scenarios use a seed-controlled shuffled schedule independent of action randomness; their order is shared, but different battle lengths mean fixed-step budgets may complete different numbers of episodes.
 
-Primary metrics: validation win-rate learning curve and normalized area under that curve; fixed-budget held-out test win-rate difference against frozen and scratch. Report both experience and wall-clock cost, model initialization separately, cache behavior when benchmarking, trainable parameter count, episode length, truncation rate, KL from prior, and argmax override rate. `decision-traces.jsonl` records the first validation battle at every checkpoint for prior→correction examples.
+Primary metrics are scenario-weighted wins and the transparent battle-quality table: training battles, validation battles, test battles, wins, game turns, final party HP, and battle score. Learning curves use validation only. The final test compares every trained residual policy with its own frozen zero-shot prior. Also report wall-clock cost, model initialization, cache behavior, trainable parameter count, truncation rate, KL from prior, action diversity, and argmax override rate.
 
 Final comparisons require exactly paired seed/battle/repeat rows. Bootstrap learner seeds and scenario groups as crossed clusters, preserving the pairing across arms, and average RNG repeats within each group. Report 95% percentile intervals; with fewer than two learner seeds or two groups the implementation suppresses the interval. Five seeds are recommended; small counts yield unstable intervals. The implementation gives a descriptive learning AUC and clustered interval for final paired win-rate differences, not an AUC significance test.
 

@@ -5,14 +5,19 @@ six disjoint player-team/opponent-trainer scenario groups. The corpus contains
 172 states total: 144 train, 10 validation, and 18 test. The test group has all
 six declared player teams.
 
-![Held-out baseline comparison](assets/zero-shot-baselines.png)
+![Held-out zero-shot comparison](assets/zero-shot-performance.png)
 
-| Frozen policy | Test wins | Mean turns | Final party HP | Mean battle score | Decision p50 | Result |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Laya CoreML ANE | 18 / 18 | 6.17 | 83.5% | 85.3 / 100 | 51.08 ms | Complete |
-| PrismNLI-0.4B | 18 / 18 | 2.61 | 92.4% | 92.1 / 100 | 171.87 ms | Complete |
-| Uniform legal action | 18 / 18 | 4.17 | 84.5% | 87.4 / 100 | 0.10 ms | Complete |
-| Jev (OpenRouter) | — | — | — | — | — | Not run: valid API credential required |
+![Frozen models versus trained policies](assets/trained-policy-performance.png)
+
+| Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 2.61 | 92.4% | 92.1 | Complete |
+| Laya zero shot | 0 | 0 | 18 | 18/18 | 6.17 | 83.5% | 85.3 | Complete |
+| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 4.17 | 84.5% | 87.4 | Complete |
+| Jev zero shot | 0 | 0 | 18 | — | — | — | — | Credential required |
+| PrismNLI + residual PPO | 144 | 10 | 18 | — | — | — | — | Not run |
+| Laya + residual PPO | 144 | 10 | 18 | — | — | — | — | Not run |
+| Jev + residual PPO | 144 | 10 | 18 | — | — | — | — | Not run |
 
 The primary score is equal-scenario-group held-out win rate; see
 [the scoring rule](scoring.md). Since every completed arm has the same 100%

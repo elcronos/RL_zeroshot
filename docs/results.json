@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "train_battles": 144,
+    "validation_battles": 10,
+    "test_battles": 18,
+    "train_scenario_groups": 39,
+    "validation_scenario_groups": 6,
+    "test_scenario_groups": 6
+  },
+  "zero_shot": [
+    {
+      "model": "PrismNLI-0.4B",
+      "status": "complete",
+      "training_battles": 0,
+      "test_battles": 18,
+      "wins": 18,
+      "mean_turns": 2.61,
+      "final_party_hp_percent": 92.4,
+      "battle_score": 92.1
+    },
+    {
+      "model": "Laya",
+      "status": "complete",
+      "training_battles": 0,
+      "test_battles": 18,
+      "wins": 18,
+      "mean_turns": 6.17,
+      "final_party_hp_percent": 83.5,
+      "battle_score": 85.3
+    },
+    {
+      "model": "Uniform (random)",
+      "status": "complete",
+      "training_battles": 0,
+      "test_battles": 18,
+      "wins": 18,
+      "mean_turns": 4.17,
+      "final_party_hp_percent": 84.5,
+      "battle_score": 87.4
+    },
+    {
+      "model": "Jev",
+      "status": "not_run",
+      "training_battles": 0,
+      "test_battles": 18
+    }
+  ],
+  "trained_policy": [
+    {
+      "model": "PrismNLI-0.4B + residual PPO",
+      "base_model": "PrismNLI-0.4B",
+      "status": "not_run",
+      "training_battles": 144,
+      "validation_battles": 10,
+      "test_battles": 18
+    },
+    {
+      "model": "Laya + residual PPO",
+      "base_model": "Laya",
+      "status": "not_run",
+      "training_battles": 144,
+      "validation_battles": 10,
+      "test_battles": 18
+    },
+    {
+      "model": "Jev + residual PPO",
+      "base_model": "Jev",
+      "status": "not_run",
+      "training_battles": 144,
+      "validation_battles": 10,
+      "test_battles": 18
+    }
+  ]
+}

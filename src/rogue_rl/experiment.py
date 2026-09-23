@@ -271,6 +271,11 @@ def train(
         },
         "provenance": provenance or {},
         "trainable_parameters": 0 if policy is None else sum(p.numel() for p in policy.parameters()),
+        "dataset": {
+            "training_battles": len(train_battles),
+            "validation_battles": len(validation),
+            "test_battles": len(corpus.split("test")),
+        },
     }
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2))
     rng = np.random.default_rng(config.seed)
@@ -280,6 +285,7 @@ def train(
     episode = 0
     completed = 0
     steps = 0
+    training_battle_ids_used: set[str] = set()
     started = time.perf_counter()
 
     def checkpoint() -> None:
@@ -308,13 +314,24 @@ def train(
             train_steps=steps,
             trace_path=output / "decision-traces.jsonl",
         )
+        validation_hp = [
+            row["final_party_hp_fraction"]
+            for row in rows
+            if row["final_party_hp_fraction"] is not None
+        ]
         _append(
             output / "progress.jsonl",
             {
                 "train_steps": steps,
                 "episodes": completed,
                 "validation_win_rate": sum(row["outcome"] == "win" for row in rows) / len(rows),
+                "validation_battle_score": float(np.mean([row["battle_score"] for row in rows])),
+                "validation_mean_turns": float(np.mean([row["turns"] for row in rows])),
+                "validation_final_party_hp_fraction": (
+                    float(np.mean(validation_hp)) if validation_hp else None
+                ),
                 "truncation_rate": sum(row["outcome"] == "truncated" for row in rows) / len(rows),
+                "training_battles_used": len(training_battle_ids_used),
                 "wall_seconds": time.perf_counter() - started,
             },
         )
@@ -324,6 +341,7 @@ def train(
         if not schedule:
             schedule = [train_battles[int(i)] for i in schedule_rng.permutation(len(train_battles))]
         battle = schedule.pop()
+        training_battle_ids_used.add(battle["id"])
         episode += 1
         observation = public_observation(env.reset(battle))
         if observation["phase"] == "terminal":
@@ -416,6 +434,8 @@ def train(
                 obs, encoder = reset_episode()
                 episode_steps = 0
     final = output / f"checkpoint-{steps:09d}.pt"
+    metadata["dataset"]["training_battles_used"] = len(training_battle_ids_used)
+    (output / "metadata.json").write_text(json.dumps(metadata, indent=2))
     (output / "completed.json").write_text(json.dumps({"final_checkpoint": final.name, "train_steps": steps}))
     return final
 
