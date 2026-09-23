@@ -115,7 +115,7 @@ the training split:
 ```sh
 uv run rogue-rl train --mode residual --prior my-model --seed 0 \
   --output runs/my-model-residual-0
-uv run rogue-rl evaluate --checkpoint runs/my-model-residual-0/checkpoint-000100000.pt
+uv run rogue-rl evaluate --checkpoint runs/my-model-residual-0/checkpoint-000001024.pt
 ```
 
 Run the same learner seeds, step budget, action cap, ROM/profile, and corpus as

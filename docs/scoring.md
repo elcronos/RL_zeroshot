@@ -25,10 +25,11 @@ on exactly the same test battle IDs, learner seeds, and repeats:
 improvement = test_win_rate(residual) - test_win_rate(frozen prior)
 ```
 
-The comparison is paired and bootstrapped over learner seeds and scenario
-groups. A policy is called better only when this difference is positive and
-its 95% paired interval excludes zero. Otherwise the result is reported as
-inconclusive, even if the point estimate is positive.
+With at least two learner seeds, the comparison is paired and bootstrapped over
+learner seeds and scenario groups. A policy is called statistically better only
+when this difference is positive and its 95% paired interval excludes zero.
+The talk-sized protocol has one seed, suppresses the interval, and reports only
+the observed descriptive change.
 
 ## 2. Guardrails
 
@@ -96,7 +97,8 @@ Every final report has two held-out panels with identical y-axis and test rows:
 1. **Zero shot:** Laya, PrismNLI, Jev, and uniform.
 2. **Policy learning:** each frozen prior beside its residual PPO policy.
 
-Each bar reports scenario-weighted win rate and its paired interval. A table
-below it reports decisions, party HP, truncations, and latency. Missing arms are
-shown as `not run`; they are never plotted as zero or inferred from another
+The talk-sized plot reports battle score beside the auditable wins, turns, and
+party HP values and does not draw a confidence interval for one seed. A larger
+multi-seed report should add scenario-weighted win-rate intervals. Missing arms
+are shown as `not run`; they are never plotted as zero or inferred from another
 model.

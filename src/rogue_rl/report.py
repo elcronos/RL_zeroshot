@@ -150,7 +150,8 @@ def paired_comparison(a: list[dict], b: list[dict], *, samples: int = 2000, seed
     }
     if len(seeds) < 2 or len(groups) < 2:
         result["warning"] = (
-            "At least two agent seeds and two scenario groups required for interval; plan five seeds."
+            "At least two agent seeds and two scenario groups are required for an interval; "
+            "the talk-sized single-seed result is descriptive only."
         )
         return result
     rng = np.random.default_rng(seed)

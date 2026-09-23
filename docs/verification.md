@@ -3,7 +3,7 @@
 The current implementation was verified on Apple Silicon with mGBA 0.10.5 and
 Python 3.12. The reproducible checks currently pass:
 
-- **94 Python tests** covering policy masking, PPO/GAE, frozen evaluation,
+- **101 Python tests** covering policy masking, PPO/GAE, frozen evaluation,
   battle scoring, model adapters, corpus isolation, bridge transport, and run
   metadata.
 - `ruff check src scripts tests` passes.
@@ -16,10 +16,10 @@ Python 3.12. The reproducible checks currently pass:
 - Laya and PrismNLI inference run locally; the Jev adapter fails explicitly
   without a valid hosted credential.
 
-The completed held-out measurements are zero-shot only. PrismNLI, Laya, and
-uniform each won 18/18 test battles; their different turns, final party HP, and
-battle scores are recorded in [results.md](results.md). Jev and all residual PPO
-arms remain `not_run`.
+PrismNLI, Laya, and uniform each won 18/18 zero-shot test battles. The 1,024-step
+Laya and PrismNLI policies also completed all 18 battles. Their turns, final
+party HP, battle scores, and 13-minute-17-second end-to-end runtime are recorded
+in [results.md](results.md). Jev remains `not_run` without a valid credential.
 
 The research ROM uses a pinned Emerald Rogue expansion revision and mGBA bridge.
 It controls real game moves, switches, damage, trainer parties, and terminal
@@ -30,4 +30,5 @@ pixels-only or byte-identical retail-game benchmark.
 The current level-10 route-trainer fixture is easy enough for uniform random to
 reach the win-rate ceiling. Battle score provides within-win resolution, but a
 stronger claim about general play or policy improvement needs harder held-out
-states, a completed Jev baseline, and residual-policy runs across seeds 0–4.
+states, a completed Jev baseline, and multiple preregistered learner seeds at a
+larger policy budget.

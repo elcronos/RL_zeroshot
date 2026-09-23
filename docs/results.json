@@ -8,6 +8,19 @@
     "validation_scenario_groups": 6,
     "test_scenario_groups": 6
   },
+  "policy_protocol": {
+    "train_steps": 1024,
+    "learner_seeds": [0],
+    "rollout_steps": 256,
+    "local_models": ["Laya", "PrismNLI-0.4B"],
+    "hardware": "Apple M1 Max, 10 cores, 64 GB RAM",
+    "end_to_end_wall_seconds": 796.56,
+    "confidence_intervals": "suppressed: one learner seed",
+    "config_sha256": "4b4410dcfc457d6b04f4f0550c90fee42207303034efd9c109a5e7aab18516c3",
+    "corpus_sha256": "7b5ed4b9c304026fc0d8d4a6382aca5a7290126f5144308355e6111735a3cf8a",
+    "rom_sha256": "004bfa0c0d74a6841769f2ef8510ee1bd9f34e2131f2fb4089ad8cd67709758f",
+    "mgba_profile_sha256": "b2a8867f38ed7a044878b8301c79e3921ce8cf16b37be09bec38dc7e1a9dfad3"
+  },
   "zero_shot": [
     {
       "model": "PrismNLI-0.4B",
@@ -50,26 +63,46 @@
     {
       "model": "PrismNLI-0.4B + residual PPO",
       "base_model": "PrismNLI-0.4B",
-      "status": "not_run",
+      "status": "complete",
       "training_battles": 144,
       "validation_battles": 10,
-      "test_battles": 18
+      "test_battles": 18,
+      "train_steps": 1024,
+      "learner_seed": 0,
+      "wins": 18,
+      "mean_turns": 2.72,
+      "final_party_hp_percent": 91.6,
+      "battle_score": 92.3,
+      "training_wall_seconds": 484.27,
+      "test_wall_seconds": 21.43,
+      "checkpoint_sha256": "1216826906fb3974880845993d2de3d51ec723599d53a30533b4708cc8ee2118",
+      "test_result_sha256": "e462b7ef6ec605025d8927f2140456490ff448e6583b6afa4107e3eb6c2221d7"
     },
     {
       "model": "Laya + residual PPO",
       "base_model": "Laya",
-      "status": "not_run",
-      "training_battles": 144,
+      "status": "complete",
+      "training_battles": 138,
       "validation_battles": 10,
-      "test_battles": 18
+      "test_battles": 18,
+      "train_steps": 1024,
+      "learner_seed": 0,
+      "wins": 18,
+      "mean_turns": 5.39,
+      "final_party_hp_percent": 86.3,
+      "battle_score": 88.1,
+      "training_wall_seconds": 189.64,
+      "test_wall_seconds": 17.47,
+      "checkpoint_sha256": "a9ec7349178224e5df08030e55b880a48573d718ce1fbc871533f4a1ca6aeacc",
+      "test_result_sha256": "66fce5a22d1873d0a9aa953478d5c750a340f34495b2977293392f2bd6b56506"
     },
     {
       "model": "Jev + residual PPO",
       "base_model": "Jev",
       "status": "not_run",
-      "training_battles": 144,
-      "validation_battles": 10,
-      "test_battles": 18
+      "training_battles": null,
+      "validation_battles": null,
+      "test_battles": null
     }
   ]
 }

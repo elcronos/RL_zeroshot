@@ -63,10 +63,13 @@ def zero_shot(data: dict, output: Path) -> None:
 def trained(data: dict, output: Path) -> None:
     zero = {row["model"]: row for row in data["zero_shot"]}
     rows = data["trained_policy"]
+    protocol = data.get("policy_protocol", {})
+    wall_minutes = protocol.get("end_to_end_wall_seconds", 0) / 60
     image, draw, font = _canvas(
         "Frozen prior vs learned residual policy",
-        f"Policy: {data['dataset']['train_battles']} train + {data['dataset']['validation_battles']} validation; "
-        f"final comparison: {data['dataset']['test_battles']} held-out test battles",
+        f"{protocol.get('train_steps', '?')} decisions | seed 0 | "
+        f"{data['dataset']['validation_battles']} validation + "
+        f"{data['dataset']['test_battles']} held-out test battles | local study {wall_minutes:.1f} min",
         160 + 112 * len(rows),
     )
     for index, row in enumerate(rows):
@@ -83,6 +86,12 @@ def trained(data: dict, output: Path) -> None:
         if row["status"] == "complete":
             _bar(draw, policy_y, row["battle_score"], "#c4b5fd")
             draw.text((850, policy_y + 3), f"trained {row['battle_score']:.1f}", fill=TEXT, font=font)
+            details = (
+                f"wins {row['wins']}/{row['test_battles']}  |  turns {row['mean_turns']:.2f}  |  "
+                f"party HP {row['final_party_hp_percent']:.1f}%  |  "
+                f"distinct train battles {row['training_battles']}"
+            )
+            draw.text((230, policy_y + 30), details, fill=MUTED, font=font)
         else:
             draw.rectangle((230, policy_y, 830, policy_y + 22), outline=GRID, width=2)
             draw.text((850, policy_y + 3), "trained NOT RUN", fill=MUTED, font=font)

@@ -23,6 +23,10 @@ validate_completed_run = study.validate_completed_run
 validate_test_evaluation = study.validate_test_evaluation
 
 
+def test_study_runner_defaults_to_one_talk_sized_seed():
+    assert study.parser().parse_args([]).seeds == [0]
+
+
 def settings_fixture(tmp_path):
     corpus = tmp_path / "battles.json"
     rom = tmp_path / "game.gba"

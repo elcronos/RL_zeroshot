@@ -19,7 +19,7 @@ from typing import Any
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--priors", nargs="+", choices=["laya", "prism", "jev"], default=["laya", "prism"])
-    result.add_argument("--seeds", nargs="+", type=int, default=list(range(5)))
+    result.add_argument("--seeds", nargs="+", type=int, default=[0])
     result.add_argument("--config", type=Path, default=Path("configs/experiment.json"))
     result.add_argument("--runs-dir", type=Path, default=Path("runs"))
     result.add_argument("--host", type=Path, default=Path(".cache/mgba-runner"))

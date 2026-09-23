@@ -16,9 +16,9 @@
     "probability_floor": 0.000001
   },
   "experiment": {
-    "total_steps": 100000,
+    "total_steps": 1024,
     "rollout_steps": 256,
-    "eval_every": 5000,
+    "eval_every": 1024,
     "eval_repeats": 1,
     "max_decisions": 500,
     "hidden_dim": 128,

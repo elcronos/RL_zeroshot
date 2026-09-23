@@ -66,10 +66,13 @@ The reproducible pilot corpus contains **172 saved Rogue battles**:
 | Split | Battles | Scenario groups | Used for |
 | --- | ---: | ---: | --- |
 | Train | 144 | 39 | Residual PPO updates |
-| Validation | 10 | 6 | Selecting the policy configuration without touching test |
+| Validation | 10 | 6 | Diagnostics at policy steps 0 and 1,024 |
 | Test | 18 | 6 | Final zero-shot and trained-policy comparison |
 
-The first zero-shot test is complete for PrismNLI, Laya, and uniform. Jev needs a valid OpenRouter credential. Residual policies have not been run yet, so the trained rows are explicitly marked `not run` rather than inferred or fabricated.
+The zero-shot and 1,024-step residual-policy tests are complete for PrismNLI
+and Laya. The full local training, validation, and held-out evaluation took
+**13 minutes 17 seconds** on a 10-core M1 Max with 64 GB RAM. Jev still needs a
+valid OpenRouter credential, so its rows remain explicit rather than inferred.
 
 | Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -77,15 +80,24 @@ The first zero-shot test is complete for PrismNLI, Laya, and uniform. Jev needs 
 | Laya zero shot | 0 | 0 | 18 | 18/18 | 6.17 | 83.5% | 85.3 / 100 |
 | Uniform random zero shot | 0 | 0 | 18 | 18/18 | 4.17 | 84.5% | 87.4 / 100 |
 | Jev zero shot | 0 | 0 | 18 | — | — | — | Not run |
-| PrismNLI + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
-| Laya + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
-| Jev + residual PPO | 144 | 10 | 18 | — | — | — | Not run |
+| PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 2.72 | 91.6% | 92.3 / 100 |
+| Laya + residual PPO | 138 | 10 | 18 | 18/18 | 5.39 | 86.3% | 88.1 / 100 |
+| Jev + residual PPO | — | — | — | — | — | — | Not run |
+
+“Training battles” is the number of distinct save states actually sampled.
+With the same 1,024-decision budget, Laya visited 138 and PrismNLI visited all
+144 because their sampled battles had different lengths.
 
 ![Zero-shot model comparison](docs/assets/zero-shot-performance.png)
 
 ![Frozen model versus trained policy](docs/assets/trained-policy-performance.png)
 
-All completed zero-shot arms won every test battle, so win rate alone cannot separate them. The battle score adds granularity: PrismNLI won faster and retained more party HP on this fixture. This remains a small pilot, not evidence of general Pokémon mastery.
+All completed arms won every test battle, so win rate alone cannot separate
+them. Laya's learned policy improved its mean score from 85.3 to 88.1, reduced
+turns from 6.17 to 5.39, and retained more party HP. PrismNLI was essentially
+flat: its score moved from 92.1 to 92.3 while turns and HP became slightly
+worse. These are single-seed descriptive results, not evidence of a robust
+effect or general Pokémon mastery.
 
 ## Experiment
 
@@ -100,11 +112,10 @@ flowchart LR
     Z --> ZJ[Jev]
     Z --> ZU[Uniform random]
     TR --> PPO[Residual PPO policy]
-    VA --> SELECT[Select configuration by validation score]
-    PPO --> SELECT
-    SELECT --> TP[PrismNLI + policy]
-    SELECT --> TL[Laya + policy]
-    SELECT --> TJ[Jev + policy]
+    VA --> DIAG[Diagnostics at steps 0 and 1,024]
+    PPO --> TP[PrismNLI + policy]
+    PPO --> TL[Laya + policy]
+    PPO --> TJ[Jev + policy]
     ZP --> COMPARE[Held-out test comparison]
     ZL --> COMPARE
     ZJ --> COMPARE
@@ -152,7 +163,11 @@ This makes a two-turn full-health win score much better than a ten-turn win at h
 
 The final table always reports raw wins, turns, party HP, and battle score so the scalar can be audited. Latency, action diversity, switch rate, residual KL, and argmax override rate are additional diagnostics.
 
-Policy configurations are chosen on validation in this order: scenario-weighted win rate, mean battle score, final party HP, then fewer turns. The test set is used once after selection. Results are averaged across learner seeds 0–4; the best-looking test seed is never selected for publication. See [the complete scoring rule](docs/scoring.md).
+The talk-sized protocol fixes the policy configuration before training and uses
+validation as a diagnostic at steps 0 and 1,024. The test set is used once at
+the end. Its single learner seed makes the result descriptive; it does not
+support a confidence interval or a claim that small differences are robust.
+See [the complete scoring rule](docs/scoring.md).
 
 ## Reproduce the environment
 
@@ -217,20 +232,23 @@ Every run writes `metadata.json`, raw `episodes.jsonl`, a first-battle decision 
 
 ## Train the residual policies
 
-Train PrismNLI, Laya, and Jev with the same 144 training battles, 10 validation battles, 100,000 policy decisions, and learner seeds 0–4. Uniform stays a zero-shot random control.
+The default is deliberately small enough for a live demo: PrismNLI, Laya, and
+Jev use the same 144 training battles, 10 validation battles, **1,024 policy
+decisions**, and learner seed 0. Uniform stays a zero-shot random control. On
+this 10-core M1 Max with 64 GB RAM, the target is under 30 minutes for the two
+local arms plus their held-out evaluations. Jev's hosted API latency is measured
+and reported separately because it cannot be bounded by the Mac.
 
 ```sh
 for prior in prism laya jev; do
-  for seed in 0 1 2 3 4; do
-    uv run rogue-rl train --mode residual --prior "$prior" --seed "$seed" \
-      --output "runs/${prior}-residual-${seed}"
-  done
+  uv run rogue-rl train --mode residual --prior "$prior" --seed 0 \
+    --output "runs/${prior}-residual-0"
 done
 ```
 
-For a multi-day local run, the resumable study runner manages the headless mGBA
-process, skips seed runs that already have `completed.json`, evaluates each final
-checkpoint once, and reports progress in `runs/policy-study-status.json`:
+The study runner manages the headless mGBA process, skips completed runs,
+evaluates each final checkpoint once, records total wall time, and reports
+progress in `runs/policy-study-status.json`:
 
 ```sh
 mkdir -p runs
@@ -251,14 +269,15 @@ An interrupted seed keeps its partial directory for diagnosis. Move or remove
 that one incomplete directory before restarting; completed seeds are retained
 and skipped.
 
-Training evaluates validation every 5,000 decisions. Compare candidate settings only on those validation records, lock the selected configuration, and evaluate the final fixed-budget checkpoint once on test. The study runner performs this test evaluation automatically. Use the following loop only when the individual `train` commands were run manually:
+Training evaluates validation before learning and after 1,024 decisions. The
+configuration and budget are fixed in advance; the validation result does not
+select a more flattering checkpoint. The study runner performs the final test
+evaluation automatically. Use this loop only when training was run manually:
 
 ```sh
 for prior in prism laya jev; do
-  for seed in 0 1 2 3 4; do
-    uv run rogue-rl evaluate \
-      --checkpoint "runs/${prior}-residual-${seed}/checkpoint-000100000.pt"
-  done
+  uv run rogue-rl evaluate \
+    --checkpoint "runs/${prior}-residual-0/checkpoint-000001024.pt"
 done
 ```
 
@@ -271,11 +290,10 @@ uv run rogue-rl summarize runs/*-residual-* --split test \
   --output runs/test-summary.json
 ```
 
-Use the validation curves to select the policy configuration lexicographically
-by wins, battle score, party HP, and then fewer turns. The published test row
-uses the locked 100,000-step configuration and aggregates all five
-preregistered learner seeds; it never selects the luckiest test seed or test
-checkpoint.
+The published test row uses the fixed 1,024-step checkpoint. With one learner
+seed, report the observed wins, turns, party HP, battle score, and wall time
+without a confidence interval. A longer multi-seed study is useful for a paper,
+but is outside this repository's 30-minute default.
 
 Update the checked-in result registry from verified run summaries, then rebuild both publication plots:
 
@@ -284,7 +302,7 @@ uv run python scripts/plot_results.py \
   --results docs/results.json --output-dir docs/assets
 ```
 
-The registry currently marks unfinished Jev and residual-policy arms as `not_run`. A missing result is never rendered as a zero score.
+The registry marks only the unavailable Jev arms as `not_run`. A missing result is never rendered as a zero score.
 
 ## Visual replays
 
