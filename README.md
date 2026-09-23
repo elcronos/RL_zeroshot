@@ -88,9 +88,7 @@ valid OpenRouter credential, so its rows remain explicit rather than inferred.
 With the same 1,024-decision budget, Laya visited 138 and PrismNLI visited all
 144 because their sampled battles had different lengths.
 
-![Zero-shot model comparison](docs/assets/zero-shot-performance.png)
-
-![Frozen model versus trained policy](docs/assets/trained-policy-performance.png)
+![Zero-shot versus residual PPO battle-quality comparison](docs/assets/model-comparison.png)
 
 ![PPO training loss over policy decisions](docs/assets/training-loss.png)
 

@@ -5,9 +5,7 @@ six disjoint player-team/opponent-trainer scenario groups. The corpus contains
 172 states total: 144 train, 10 validation, and 18 test. The test group has all
 six declared player teams.
 
-![Held-out zero-shot comparison](assets/zero-shot-performance.png)
-
-![Frozen models versus trained policies](assets/trained-policy-performance.png)
+![Zero-shot versus residual PPO battle-quality comparison](assets/model-comparison.png)
 
 ![PPO training loss over policy decisions](assets/training-loss.png)
 
