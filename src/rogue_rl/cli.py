@@ -301,6 +301,41 @@ def _action_label(obs: dict, action: int) -> str:
     return f"{action + 1}. Switch to {mon.get('species_name', mon.get('species', '?'))}"
 
 
+def _write_test_evaluation(log: Path, rows: list[dict], checkpoint: Path) -> Path:
+    """Publish a complete held-out evaluation and its checkpoint binding atomically."""
+    manifest = log.with_name("test-evaluation-metadata.json")
+    if log.exists() or manifest.exists():
+        raise ValueError("Test results already exist; inspect them instead of repeatedly tuning on test data")
+    temporary_log = log.with_name(log.name + ".tmp")
+    temporary_manifest = manifest.with_name(manifest.name + ".tmp")
+    if temporary_log.exists() or temporary_manifest.exists():
+        raise ValueError("An incomplete test evaluation exists; preserve or remove its .tmp files first")
+    try:
+        with temporary_log.open("x") as handle:
+            for row in rows:
+                handle.write(json.dumps(row, allow_nan=False) + "\n")
+        result_sha256 = sha256_file(temporary_log)
+        temporary_log.replace(log)
+        temporary_manifest.write_text(
+            json.dumps(
+                {
+                    "checkpoint": checkpoint.name,
+                    "checkpoint_sha256": sha256_file(checkpoint),
+                    "episodes": len(rows),
+                    "result_sha256": result_sha256,
+                },
+                indent=2,
+                allow_nan=False,
+            )
+            + "\n"
+        )
+        temporary_manifest.replace(manifest)
+    finally:
+        temporary_log.unlink(missing_ok=True)
+        temporary_manifest.unlink(missing_ok=True)
+    return manifest
+
+
 def _annotate_frame(
     source: Path, target: Path, obs: dict, probabilities: np.ndarray | None, selected: int | None
 ) -> Path:
@@ -560,7 +595,8 @@ def main(argv: list[str] | None = None) -> int:
         ):
             raise ValueError("Evaluation mGBA profile differs from training")
         log = args.checkpoint.parent / "test-evaluation.jsonl"
-        if log.exists():
+        manifest = args.checkpoint.parent / "test-evaluation-metadata.json"
+        if log.exists() or manifest.exists():
             raise ValueError(
                 "Test results already exist; inspect them instead of repeatedly tuning on test data"
             )
@@ -584,9 +620,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_decisions=config.max_decisions,
                 train_steps=saved["steps"],
             )
-            with log.open("x") as handle:
-                for row in rows:
-                    handle.write(json.dumps(row) + "\n")
+            _write_test_evaluation(log, rows, args.checkpoint)
         finally:
             env.close()
         print(f"Test evaluation written to {log}")

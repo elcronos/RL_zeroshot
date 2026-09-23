@@ -176,7 +176,30 @@ for prior in prism laya jev; do
 done
 ```
 
-Training evaluates validation every 5,000 decisions. Compare candidate settings only on those validation records, lock the selected configuration, and evaluate the final fixed-budget checkpoint once on test:
+For a multi-day local run, the resumable study runner manages the headless mGBA
+process, skips seed runs that already have `completed.json`, evaluates each final
+checkpoint once, and reports progress in `runs/policy-study-status.json`:
+
+```sh
+mkdir -p runs
+nohup uv run python scripts/run_policy_study.py --priors laya prism \
+  > runs/policy-study.log 2>&1 &
+
+cat runs/policy-study-status.json
+tail -f runs/laya-residual-0.log
+
+# Stop cleanly; the active partial seed is retained for diagnosis.
+kill "$(cat runs/policy-study.pid)"
+
+# Jev is a separate provider-backed run and requires a valid credential.
+OPENROUTER_API_KEY="your-key" uv run python scripts/run_policy_study.py --priors jev
+```
+
+An interrupted seed keeps its partial directory for diagnosis. Move or remove
+that one incomplete directory before restarting; completed seeds are retained
+and skipped.
+
+Training evaluates validation every 5,000 decisions. Compare candidate settings only on those validation records, lock the selected configuration, and evaluate the final fixed-budget checkpoint once on test. The study runner performs this test evaluation automatically. Use the following loop only when the individual `train` commands were run manually:
 
 ```sh
 for prior in prism laya jev; do
