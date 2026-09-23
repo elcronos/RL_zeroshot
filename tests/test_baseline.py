@@ -13,10 +13,13 @@ from rogue_rl.report import baseline_summary, compare_baselines
 
 class FixturePrior:
     def __init__(self):
-        self.provenance = {"test_fixture": True}
         self.calls = 0
         self.cache_hits = 0
         self.inference_seconds = 0.0
+
+    @property
+    def provenance(self):
+        return {"test_fixture": True, "calls_observed": self.calls}
 
     def probabilities(self, obs):
         self.calls += 1
@@ -137,6 +140,7 @@ def test_baseline_writes_real_episode_rows_trace_and_summary(tmp_path, monkeypat
     meta = json.loads((output / "metadata.json").read_text())
     assert meta["rom_sha256"] == sha256_file(tmp_path / "fixture.gba")
     assert meta["mgba_bridge"]["protocol"] == 1
+    assert meta["prior_provenance"]["calls_observed"] == 2
     assert meta["dataset"] == {
         "training_battles_used": 0,
         "evaluation_split": "train",

@@ -93,6 +93,13 @@ Do not add a fallback to Laya, PrismNLI, uniform, or a heuristic. A failed
 provider must produce a failed/incomplete run, because a fallback invalidates a
 comparison.
 
+For a hosted model, keep the credential in an environment variable and pin the
+provider model revision in the command or adapter default. Retry only transient
+timeouts, HTTP 429, and server errors with a bounded exponential backoff.
+Authentication and malformed model responses must fail the run. Record the
+requested model, retry configuration, and served model identifier in
+`provenance` so a later benchmark can identify provider drift.
+
 ## Run the comparison
 
 First validate the exact corpus and replay control:

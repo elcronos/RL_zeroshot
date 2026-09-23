@@ -64,7 +64,15 @@ class TranscriptFixture:
 
 
 class FixedPrior:
+    def __init__(self):
+        self.calls = 0
+
+    @property
+    def provenance(self):
+        return {"calls_observed": self.calls}
+
     def probabilities(self, obs):
+        self.calls += 1
         return np.asarray([0.8, 0.2] + [0.0] * 8, dtype=np.float32)
 
 
@@ -129,8 +137,10 @@ def test_training_checkpoint_evaluation_lifecycle(tmp_path, monkeypatch):
     policy, loaded_config, saved = load_checkpoint(final)
     assert loaded_config == config
     assert saved["steps"] == 7
-    assert saved["provenance"] == {"fixture": True}
+    assert saved["provenance"]["fixture"] is True
+    assert saved["provenance"]["prior"]["calls_observed"] > 0
     metadata = json.loads((output / "metadata.json").read_text())
+    assert metadata["provenance"]["prior"]["calls_observed"] > 0
     assert metadata["dataset"] == {
         "training_battles": 1,
         "validation_battles": 1,

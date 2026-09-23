@@ -116,7 +116,7 @@ def test_training_loss_plot_renders_registry_curves(tmp_path):
         "policy_protocol": {
             "train_steps": 512,
             "rollout_steps": 256,
-            "local_models": ["Laya", "PrismNLI-0.4B"],
+            "trained_models": ["Laya", "PrismNLI-0.4B"],
             "learner_seeds": [0],
         },
         "training_curves": [curve("Laya"), curve("PrismNLI-0.4B")],
@@ -134,7 +134,7 @@ def test_training_loss_plot_rejects_misaligned_update_steps(tmp_path):
         "policy_protocol": {
             "train_steps": 512,
             "rollout_steps": 256,
-            "local_models": ["Laya", "PrismNLI-0.4B"],
+            "trained_models": ["Laya", "PrismNLI-0.4B"],
             "learner_seeds": [0],
         },
         "training_curves": [
@@ -152,7 +152,7 @@ def test_training_loss_plot_rejects_invalid_auxiliary_diagnostic(tmp_path):
         "policy_protocol": {
             "train_steps": 512,
             "rollout_steps": 256,
-            "local_models": ["Laya", "PrismNLI-0.4B"],
+            "trained_models": ["Laya", "PrismNLI-0.4B"],
             "learner_seeds": [0],
         },
         "training_curves": [curve("Laya"), curve("PrismNLI-0.4B")],

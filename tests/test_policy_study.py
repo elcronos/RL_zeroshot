@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rogue_rl.cli import _write_test_evaluation
+from rogue_rl.cli import _prior_identity, _write_test_evaluation
 from rogue_rl.prism import PrismConfig
 
 spec = importlib.util.spec_from_file_location(
@@ -155,11 +155,33 @@ def test_test_evaluation_writer_publishes_log_and_binding_atomically(tmp_path):
     checkpoint.write_bytes(b"weights")
     log = tmp_path / "test-evaluation.jsonl"
     rows = [{"battle_id": "held-out", "repeat": 0, "split": "test"}]
-    manifest_path = _write_test_evaluation(log, rows, checkpoint)
+    manifest_path = _write_test_evaluation(
+        log,
+        rows,
+        checkpoint,
+        prior_provenance={"served_models": ["provider/snapshot"]},
+    )
     manifest = json.loads(manifest_path.read_text())
     assert json.loads(log.read_text()) == rows[0]
     assert manifest["checkpoint_sha256"] == file_sha256(checkpoint)
     assert manifest["result_sha256"] == file_sha256(log)
+    assert manifest["prior_provenance"] == {"served_models": ["provider/snapshot"]}
     assert not list(tmp_path.glob("*.tmp"))
     with pytest.raises(ValueError, match="already exist"):
         _write_test_evaluation(log, rows, checkpoint)
+
+
+def test_prior_identity_ignores_only_run_observed_served_models():
+    saved = {
+        "backend": "provider",
+        "config": {"model": "stable-alias"},
+        "served_models": ["provider/snapshot-a"],
+    }
+    fresh = {
+        "backend": "provider",
+        "config": {"model": "stable-alias"},
+        "served_models": [],
+    }
+    assert _prior_identity(saved) == _prior_identity(fresh)
+    fresh["config"]["model"] = "another-alias"
+    assert _prior_identity(saved) != _prior_identity(fresh)

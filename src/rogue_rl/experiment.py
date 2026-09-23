@@ -288,20 +288,14 @@ def train(
     training_battle_ids_used: set[str] = set()
     started = time.perf_counter()
 
+    def current_provenance() -> dict:
+        value = dict(provenance or {})
+        if prior_source is not None and hasattr(prior_source, "provenance"):
+            value["prior"] = prior_source.provenance
+        return value
+
     def checkpoint() -> None:
         path = output / f"checkpoint-{steps:09d}.pt"
-        torch.save(
-            {
-                "policy": None if policy is None else policy.state_dict(),
-                "config": asdict(config),
-                "steps": steps,
-                "feature_version": FEATURE_VERSION,
-                "corpus_sha256": metadata["corpus_sha256"],
-                "rom_sha256": corpus.rom_sha256,
-                "provenance": provenance or {},
-            },
-            path,
-        )
         rows = evaluate(
             env,
             validation,
@@ -334,6 +328,18 @@ def train(
                 "training_battles_used": len(training_battle_ids_used),
                 "wall_seconds": time.perf_counter() - started,
             },
+        )
+        torch.save(
+            {
+                "policy": None if policy is None else policy.state_dict(),
+                "config": asdict(config),
+                "steps": steps,
+                "feature_version": FEATURE_VERSION,
+                "corpus_sha256": metadata["corpus_sha256"],
+                "rom_sha256": corpus.rom_sha256,
+                "provenance": current_provenance(),
+            },
+            path,
         )
 
     def reset_episode() -> tuple[dict, FeatureEncoder]:
@@ -435,6 +441,7 @@ def train(
                 episode_steps = 0
     final = output / f"checkpoint-{steps:09d}.pt"
     metadata["dataset"]["training_battles_used"] = len(training_battle_ids_used)
+    metadata["provenance"] = current_provenance()
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2))
     (output / "completed.json").write_text(json.dumps({"final_checkpoint": final.name, "train_steps": steps}))
     return final

@@ -126,15 +126,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--prior", choices=["laya", "uniform", "prism", "jev"], default="laya",
         help="Frozen decision prior for frozen/residual/gated arms",
     )
-    run.add_argument("--openrouter-model", default="~typesafe/jev-latest")
+    run.add_argument("--openrouter-model", default="typesafe/jev-1.13")
     run = commands.add_parser("evaluate", help="Evaluate a final checkpoint on untouched test battles")
     run.add_argument("--checkpoint", type=Path, required=True)
-    run.add_argument("--openrouter-model", default="~typesafe/jev-latest")
+    run.add_argument("--openrouter-model", default="typesafe/jev-1.13")
     baseline = commands.add_parser("baseline", help="Play actual battle states with frozen Laya; no training")
     baseline.add_argument("--prior", choices=["laya", "uniform", "prism", "jev"], default="laya")
     baseline.add_argument(
         "--openrouter-model",
-        default="~typesafe/jev-latest",
+        default="typesafe/jev-1.13",
         help="OpenRouter TypeSafe model slug for --prior jev",
     )
     baseline.add_argument("--split", choices=["train", "validation", "test"], default="train")
@@ -149,7 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
     visual.add_argument("--prior", choices=["laya", "uniform", "prism", "jev"], default="laya")
     visual.add_argument(
         "--openrouter-model",
-        default="~typesafe/jev-latest",
+        default="typesafe/jev-1.13",
         help="OpenRouter TypeSafe model slug for --prior jev",
     )
     visual.add_argument("--split", choices=["train", "validation", "test"], default="train")
@@ -238,6 +238,10 @@ def _baseline(settings: dict, corpus: Corpus, args: argparse.Namespace) -> dict:
         failure = exc
     finally:
         env.close()
+        metadata["prior_provenance"] = getattr(prior, "provenance", None)
+        (args.output / "metadata.json").write_text(
+            json.dumps(metadata, indent=2, allow_nan=False) + "\n"
+        )
         rows = read_jsonl(episodes_path)
         model_metrics = {
             "calls": getattr(prior, "calls", 0),
@@ -301,7 +305,13 @@ def _action_label(obs: dict, action: int) -> str:
     return f"{action + 1}. Switch to {mon.get('species_name', mon.get('species', '?'))}"
 
 
-def _write_test_evaluation(log: Path, rows: list[dict], checkpoint: Path) -> Path:
+def _write_test_evaluation(
+    log: Path,
+    rows: list[dict],
+    checkpoint: Path,
+    *,
+    prior_provenance: dict | None = None,
+) -> Path:
     """Publish a complete held-out evaluation and its checkpoint binding atomically."""
     manifest = log.with_name("test-evaluation-metadata.json")
     if log.exists() or manifest.exists():
@@ -323,6 +333,7 @@ def _write_test_evaluation(log: Path, rows: list[dict], checkpoint: Path) -> Pat
                     "checkpoint_sha256": sha256_file(checkpoint),
                     "episodes": len(rows),
                     "result_sha256": result_sha256,
+                    "prior_provenance": prior_provenance,
                 },
                 indent=2,
                 allow_nan=False,
@@ -334,6 +345,13 @@ def _write_test_evaluation(log: Path, rows: list[dict], checkpoint: Path) -> Pat
         temporary_log.unlink(missing_ok=True)
         temporary_manifest.unlink(missing_ok=True)
     return manifest
+
+
+def _prior_identity(provenance: object) -> object:
+    """Return immutable provider configuration without run-observed model IDs."""
+    if not isinstance(provenance, dict):
+        return provenance
+    return {key: value for key, value in provenance.items() if key != "served_models"}
 
 
 def _annotate_frame(
@@ -458,6 +476,10 @@ def _visual(settings: dict, corpus: Corpus, args: argparse.Namespace) -> dict:
         replay = None
     finally:
         env.close()
+        metadata["prior_provenance"] = getattr(prior, "provenance", None)
+        (args.output / "metadata.json").write_text(
+            json.dumps(metadata, indent=2, allow_nan=False) + "\n"
+        )
     result = {
         "status": "failed" if failure else "complete",
         "prior": args.prior,
@@ -605,7 +627,9 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("Checkpoint lacks frozen-prior provenance")
         prior_args = argparse.Namespace(prior=prior_name, openrouter_model=args.openrouter_model)
         prior, _ = _prior(settings, prior_args)
-        if saved["provenance"].get("prior") != getattr(prior, "provenance", None):
+        if _prior_identity(saved["provenance"].get("prior")) != _prior_identity(
+            getattr(prior, "provenance", None)
+        ):
             raise ValueError("Evaluation frozen-prior configuration/artifact differs from training")
         prior = select_prior(config, prior)
         env = _environment(settings, corpus)
@@ -620,7 +644,18 @@ def main(argv: list[str] | None = None) -> int:
                 max_decisions=config.max_decisions,
                 train_steps=saved["steps"],
             )
-            _write_test_evaluation(log, rows, args.checkpoint)
+            trained_prior = saved["provenance"].get("prior") or {}
+            evaluated_prior = getattr(prior, "provenance", None) or {}
+            trained_models = set(trained_prior.get("served_models", []))
+            evaluated_models = set(evaluated_prior.get("served_models", []))
+            if trained_models and evaluated_models != trained_models:
+                raise ValueError("Evaluation was served by a different provider model snapshot")
+            _write_test_evaluation(
+                log,
+                rows,
+                args.checkpoint,
+                prior_provenance=getattr(prior, "provenance", None),
+            )
         finally:
             env.close()
         print(f"Test evaluation written to {log}")

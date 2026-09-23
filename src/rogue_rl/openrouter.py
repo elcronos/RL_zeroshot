@@ -19,11 +19,19 @@ from .laya import semantic_request
 class OpenRouterConfig:
     model: str
     timeout_seconds: float = 45.0
+    max_retries: int = 3
+    retry_backoff_seconds: float = 1.0
     endpoint: str = "https://openrouter.ai/api/alpha/decisions"
 
     def __post_init__(self) -> None:
-        if not self.model or self.timeout_seconds <= 0:
-            raise ValueError("OpenRouter model and timeout must be positive")
+        if (
+            not self.model
+            or self.timeout_seconds <= 0
+            or type(self.max_retries) is not int
+            or self.max_retries < 0
+            or self.retry_backoff_seconds < 0
+        ):
+            raise ValueError("OpenRouter model, timeout, retry count, and backoff must be valid")
 
 
 class OpenRouterPrior:
@@ -66,21 +74,45 @@ class OpenRouterPrior:
             method="POST",
         )
         started = time.perf_counter()
-        try:
-            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
-                payload = json.loads(response.read().decode())
-        except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"OpenRouter request failed with HTTP {exc.code}") from exc
-        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-            raise RuntimeError(f"OpenRouter request failed: {type(exc).__name__}") from exc
+        payload = None
+        for attempt in range(self.config.max_retries + 1):
+            try:
+                with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                    raw_payload = response.read()
+                break
+            except urllib.error.HTTPError as exc:
+                retryable = exc.code == 429 or exc.code >= 500
+                if not retryable or attempt == self.config.max_retries:
+                    self.inference_seconds += time.perf_counter() - started
+                    raise RuntimeError(f"OpenRouter request failed with HTTP {exc.code}") from exc
+            except urllib.error.URLError as exc:
+                retryable = isinstance(exc.reason, TimeoutError)
+                if not retryable or attempt == self.config.max_retries:
+                    self.inference_seconds += time.perf_counter() - started
+                    raise RuntimeError(f"OpenRouter request failed: {type(exc).__name__}") from exc
+            except TimeoutError as exc:
+                if attempt == self.config.max_retries:
+                    self.inference_seconds += time.perf_counter() - started
+                    raise RuntimeError("OpenRouter request failed: TimeoutError") from exc
+            time.sleep(self.config.retry_backoff_seconds * 2**attempt)
         self.inference_seconds += time.perf_counter() - started
+        try:
+            payload = json.loads(raw_payload.decode())
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError("OpenRouter returned malformed JSON") from exc
+        if not isinstance(payload, dict):
+            raise RuntimeError("OpenRouter returned a non-object response")  # noqa: TRY004
         self.calls += 1
-        if isinstance(payload.get("model"), str):
-            self.served_models.add(payload["model"])
+        served_model = payload.get("model")
+        if not isinstance(served_model, str) or not served_model:
+            raise RuntimeError("OpenRouter response omitted its served model identifier")
+        self.served_models.add(served_model)
         try:
             answer = payload["answers"]["action"]
             choice = int(answer["choice"])
             raw_probabilities = answer["probabilities"]
+            if not isinstance(raw_probabilities, dict):
+                raise TypeError("probabilities must be an object")
             values = np.asarray(
                 [float(raw_probabilities.get(str(index), 0.0)) for index in range(len(legal))],
                 dtype=np.float32,

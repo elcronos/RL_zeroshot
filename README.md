@@ -46,12 +46,12 @@ take visibly different paths.
   <tr>
     <td><img src="docs/assets/laya-bulbasaur-stunfisk.gif" alt="Laya on the shared Bulbasaur versus Stunfisk battle" width="100%"></td>
     <td><img src="docs/assets/prism-bulbasaur-stunfisk.gif" alt="PrismNLI on the shared Bulbasaur versus Stunfisk battle" width="100%"></td>
-    <td><strong>Real replay pending</strong><br><br>Jev requires a valid OpenRouter credential. This cell remains explicit rather than substituting another model or fabricating its choices.</td>
+    <td><img src="docs/assets/jev-bulbasaur-stunfisk.gif" alt="Jev on the shared Bulbasaur versus Stunfisk battle" width="100%"></td>
   </tr>
   <tr>
     <td><strong>10 decisions:</strong> opens with Growth, Leech Seed, Growth; later switches to Pidgey and back.</td>
     <td><strong>17 decisions:</strong> opens with Leech Seed, switches to Pidgey, then cycles through Pidgey, Pikachu, and Bulbasaur.</td>
-    <td>The same save state and seed will be used when the provider run is available.</td>
+    <td><strong>16 decisions:</strong> repeatedly switches early, then uses Vine Whip, Leech Seed, and a final Vine Whip.</td>
   </tr>
 </table>
 
@@ -69,24 +69,24 @@ The reproducible pilot corpus contains **172 saved Rogue battles**:
 | Validation | 10 | 6 | Diagnostics at policy steps 0 and 1,024 |
 | Test | 18 | 6 | Final zero-shot and trained-policy comparison |
 
-The zero-shot and 1,024-step residual-policy tests are complete for PrismNLI
-and Laya. The full local training, validation, and held-out evaluation took
-**13 minutes 17 seconds** on a 10-core M1 Max with 64 GB RAM. Jev still needs a
-valid OpenRouter credential, so its rows remain explicit rather than inferred.
+The zero-shot and 1,024-step residual-policy tests are complete for all three
+models. The two local policy arms, validation, and held-out evaluations took
+**13 minutes 17 seconds** on a 10-core M1 Max with 64 GB RAM. The separate
+hosted Jev arm took **28 minutes 25 seconds**, including its final test.
 
 | Model / policy | Training battles | Validation battles | Test battles | Wins | Truncations | Mean turns | Final party HP | Battle score |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 2.61 | 92.4% | 92.1 / 100 |
 | Laya zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 6.17 | 83.5% | 85.3 / 100 |
 | Uniform random zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 4.17 | 84.5% | 87.4 / 100 |
-| Jev zero shot | 0 | 0 | 18 | — | — | — | — | Not run |
+| Jev zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 2.83 | 90.2% | 92.9 / 100 |
 | PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 0/18 | 2.72 | 91.6% | 92.3 / 100 |
 | Laya + residual PPO | 138 | 10 | 18 | 18/18 | 0/18 | 5.39 | 86.3% | 88.1 / 100 |
-| Jev + residual PPO | — | — | — | — | — | — | — | Not run |
+| Jev + residual PPO | 144 | 10 | 18 | 18/18 | 0/18 | 1.56 | 91.6% | 94.1 / 100 |
 
 “Training battles” is the number of distinct save states actually sampled.
-With the same 1,024-decision budget, Laya visited 138 and PrismNLI visited all
-144 because their sampled battles had different lengths.
+With the same 1,024-decision budget, Laya visited 138 states; PrismNLI and Jev
+visited all 144 because their sampled battles had different lengths.
 
 ![Zero-shot versus residual PPO battle-quality comparison](docs/assets/model-comparison.png)
 
@@ -107,16 +107,14 @@ gradient norm, and clipping measurements are retained in
 [`docs/results.json`](docs/results.json), together with the SHA-256 of each raw
 `updates.jsonl` log.
 
-All completed arms won every test battle, so win rate alone cannot separate
-them. Laya's learned policy improved its mean score from 85.3 to 88.1, reduced
-turns from 6.17 to 5.39, and retained more party HP. PrismNLI was essentially
-flat: its score moved from 92.1 to 92.3 while turns and HP became slightly
-worse. Its score is the mean of per-battle nonlinear values: the residual had
-more zero- and one-turn wins, but also a few long outliers that made arithmetic
-mean turns worse. Its mean exponential speed component rose enough to offset
-the lower HP component by 0.19 score points. This is a scoring-shape effect,
-not evidence of a meaningful improvement. These are single-seed descriptive
-results, not evidence of a robust effect or general Pokémon mastery.
+Every arm won every test battle, so win rate alone cannot separate them. Jev's
+learned policy raised its score from 92.9 to 94.1, reduced turns from 2.83 to
+1.56, and raised party HP from 90.2% to 91.6%. Laya improved from 85.3 to 88.1
+with fewer turns and more HP. PrismNLI was
+essentially flat at 92.1 versus 92.3; its nonlinear per-battle speed component
+offset slightly worse arithmetic mean turns and HP. These are single-seed
+descriptive results, not evidence of a robust effect or general Pokémon
+mastery.
 
 ## Experiment
 
@@ -260,9 +258,9 @@ Every run writes `metadata.json`, raw `episodes.jsonl`, a first-battle decision 
 The default is deliberately small enough for a live demo: PrismNLI, Laya, and
 Jev use the same 144 training battles, 10 validation battles, **1,024 policy
 decisions**, and learner seed 0. Uniform stays a zero-shot random control. On
-this 10-core M1 Max with 64 GB RAM, the target is under 30 minutes for the two
-local arms plus their held-out evaluations. Jev's hosted API latency is measured
-and reported separately because it cannot be bounded by the Mac.
+this 10-core M1 Max with 64 GB RAM, the two local arms finish well under 30
+minutes together. The separate hosted Jev arm completed in 28 minutes 25
+seconds in the recorded run; provider latency can vary.
 
 ```sh
 for prior in prism laya jev; do
@@ -327,12 +325,14 @@ rebuild the evaluation and training-loss publication plots:
 ```sh
 uv run python scripts/import_training_curves.py \
   --curve 'Laya=runs/laya-residual-0/updates.jsonl' \
-  --curve 'PrismNLI-0.4B=runs/prism-residual-0/updates.jsonl'
+  --curve 'PrismNLI-0.4B=runs/prism-residual-0/updates.jsonl' \
+  --curve 'Jev=runs/jev-residual-0/updates.jsonl'
 uv run python scripts/plot_results.py \
   --results docs/results.json --output-dir docs/assets
 ```
 
-The registry marks only the unavailable Jev arms as `not_run`. A missing result is never rendered as a zero score.
+The registry accepts `not_run` for a genuinely unavailable arm. A missing
+result is never rendered as a zero score.
 
 ## Visual replays
 

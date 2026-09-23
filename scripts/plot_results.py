@@ -210,7 +210,7 @@ def _validated_training_curves(data: dict) -> list[dict]:
     if total_steps < 1 or rollout_steps < 1 or total_steps % rollout_steps:
         raise ValueError("training steps must be a positive multiple of rollout steps")
     expected_steps = list(range(rollout_steps, total_steps + 1, rollout_steps))
-    expected_models = set(protocol.get("local_models", []))
+    expected_models = set(protocol.get("trained_models", []))
     expected_seeds = set(protocol.get("learner_seeds", []))
     observed_pairs: set[tuple[str, int]] = set()
 
@@ -250,7 +250,7 @@ def _validated_training_curves(data: dict) -> list[dict]:
 
     expected_pairs = {(model, seed) for model in expected_models for seed in expected_seeds}
     if observed_pairs != expected_pairs:
-        raise ValueError("training curves must cover every local model and learner seed")
+        raise ValueError("training curves must cover every trained model and learner seed")
     return curves
 
 

@@ -25,7 +25,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--host", type=Path, default=Path(".cache/mgba-runner"))
     result.add_argument("--rom", type=Path, default=Path("data/rogue-research.gba"))
     result.add_argument("--lua", type=Path, default=Path("data/rogue-profile.lua"))
-    result.add_argument("--openrouter-model", default="~typesafe/jev-latest")
+    result.add_argument("--openrouter-model", default="typesafe/jev-1.13")
     return result
 
 

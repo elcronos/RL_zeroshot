@@ -10,16 +10,23 @@
   },
   "policy_protocol": {
     "train_steps": 1024,
-    "learner_seeds": [0],
+    "learner_seeds": [
+      0
+    ],
     "rollout_steps": 256,
-    "local_models": ["Laya", "PrismNLI-0.4B"],
     "hardware": "Apple M1 Max, 10 cores, 64 GB RAM",
-    "end_to_end_wall_seconds": 796.56,
     "confidence_intervals": "suppressed: one learner seed",
     "config_sha256": "4b4410dcfc457d6b04f4f0550c90fee42207303034efd9c109a5e7aab18516c3",
     "corpus_sha256": "7b5ed4b9c304026fc0d8d4a6382aca5a7290126f5144308355e6111735a3cf8a",
     "rom_sha256": "004bfa0c0d74a6841769f2ef8510ee1bd9f34e2131f2fb4089ad8cd67709758f",
-    "mgba_profile_sha256": "b2a8867f38ed7a044878b8301c79e3921ce8cf16b37be09bec38dc7e1a9dfad3"
+    "mgba_profile_sha256": "b2a8867f38ed7a044878b8301c79e3921ce8cf16b37be09bec38dc7e1a9dfad3",
+    "trained_models": [
+      "Laya",
+      "PrismNLI-0.4B",
+      "Jev"
+    ],
+    "local_end_to_end_wall_seconds": 796.56,
+    "jev_end_to_end_wall_seconds": 1704.82
   },
   "zero_shot": [
     {
@@ -57,9 +64,16 @@
     },
     {
       "model": "Jev",
-      "status": "not_run",
+      "status": "complete",
       "training_battles": 0,
-      "test_battles": 18
+      "test_battles": 18,
+      "wins": 18,
+      "truncations": 0,
+      "mean_turns": 2.83,
+      "final_party_hp_percent": 90.2,
+      "battle_score": 92.9,
+      "test_wall_seconds": 37.76,
+      "result_sha256": "366c8e9560b3b17ae8052cc68ea0429b8c136549a7ed5867a9368e4f4057f0d8"
     }
   ],
   "training_curves": [
@@ -70,48 +84,48 @@
       "updates_sha256": "cb783fde0d6b07cca494734f2c9c3aa3cde5bc122c64922328c2915b34c76a1c",
       "points": [
         {
-          "train_steps": 256,
+          "approx_kl": 0.00010946868860628456,
+          "clip_fraction": 0.0,
+          "entropy": 1.5464374795556068,
+          "grad_norm": 0.9973016567528248,
           "loss": 0.10196508350782096,
           "policy_loss": -0.002033791271969676,
-          "value_loss": 0.23891749326139688,
-          "entropy": 1.5464374795556068,
           "prior_kl": 8.997214799560949e-05,
-          "approx_kl": 0.00010946868860628456,
-          "grad_norm": 0.9973016567528248,
-          "clip_fraction": 0.0
+          "train_steps": 256,
+          "value_loss": 0.23891749326139688
         },
         {
-          "train_steps": 512,
+          "approx_kl": 0.00028822604508604854,
+          "clip_fraction": 0.0,
+          "entropy": 1.4982144981622696,
+          "grad_norm": 0.29436930175870657,
           "loss": -0.01583475264487788,
           "policy_loss": -0.003467857837677002,
-          "value_loss": 0.005143750415300019,
-          "entropy": 1.4982144981622696,
           "prior_kl": 0.0008674934069858864,
-          "approx_kl": 0.00028822604508604854,
-          "grad_norm": 0.29436930175870657,
-          "clip_fraction": 0.0
+          "train_steps": 512,
+          "value_loss": 0.005143750415300019
         },
         {
-          "train_steps": 768,
+          "approx_kl": 0.0002606601774459705,
+          "clip_fraction": 0.0,
+          "entropy": 1.5072695910930634,
+          "grad_norm": 0.3140830807387829,
           "loss": 0.03294688218738884,
           "policy_loss": -0.0007638800889253616,
-          "value_loss": 0.09724602045025676,
-          "entropy": 1.5072695910930634,
           "prior_kl": 0.003208927024388686,
-          "approx_kl": 0.0002606601774459705,
-          "grad_norm": 0.3140830807387829,
-          "clip_fraction": 0.0
+          "train_steps": 768,
+          "value_loss": 0.09724602045025676
         },
         {
-          "train_steps": 1024,
+          "approx_kl": 0.000454921304481104,
+          "clip_fraction": 0.0,
+          "entropy": 1.588847503066063,
+          "grad_norm": 0.3210061751306057,
           "loss": -0.01745671006210614,
           "policy_loss": -0.003999599954113364,
-          "value_loss": 0.0041501935047563165,
-          "entropy": 1.588847503066063,
           "prior_kl": 0.0071253913920372725,
-          "approx_kl": 0.000454921304481104,
-          "grad_norm": 0.3210061751306057,
-          "clip_fraction": 0.0
+          "train_steps": 1024,
+          "value_loss": 0.0041501935047563165
         }
       ]
     },
@@ -122,50 +136,102 @@
       "updates_sha256": "f052ae2b5f8a4d8e25498bdad74f50ef214668b3b6bd68f3f0ded19626d2a436",
       "points": [
         {
-          "train_steps": 256,
+          "approx_kl": 0.00028784398455172777,
+          "clip_fraction": 0.0,
+          "entropy": 1.7113729491829872,
+          "grad_norm": 1.1850156113505363,
           "loss": 0.11880184791516513,
           "policy_loss": -0.005155384656973183,
-          "value_loss": 0.2821139091392979,
-          "entropy": 1.7113729491829872,
           "prior_kl": 0.0002801288189003548,
-          "approx_kl": 0.00028784398455172777,
-          "grad_norm": 1.1850156113505363,
-          "clip_fraction": 0.0
+          "train_steps": 256,
+          "value_loss": 0.2821139091392979
         },
         {
-          "train_steps": 512,
+          "approx_kl": 0.0003815069794654846,
+          "clip_fraction": 0.0,
+          "entropy": 1.69338858127594,
+          "grad_norm": 0.3324913112446666,
           "loss": -0.015822963003301993,
           "policy_loss": -0.002034480683505535,
-          "value_loss": 0.005993982995278202,
-          "entropy": 1.69338858127594,
           "prior_kl": 0.0029682276872335933,
-          "approx_kl": 0.0003815069794654846,
-          "grad_norm": 0.3324913112446666,
-          "clip_fraction": 0.0
+          "train_steps": 512,
+          "value_loss": 0.005993982995278202
         },
         {
-          "train_steps": 768,
+          "approx_kl": 0.0011636264389380813,
+          "clip_fraction": 0.0,
+          "entropy": 1.6988220438361168,
+          "grad_norm": 0.34066008031368256,
           "loss": -0.022960978327319026,
           "policy_loss": -0.007550545269623399,
-          "value_loss": 0.0022193962322489824,
-          "entropy": 1.6988220438361168,
           "prior_kl": 0.00936179401469417,
-          "approx_kl": 0.0011636264389380813,
-          "grad_norm": 0.34066008031368256,
-          "clip_fraction": 0.0
+          "train_steps": 768,
+          "value_loss": 0.0022193962322489824
         },
         {
-          "train_steps": 1024,
+          "approx_kl": 0.002287151350174099,
+          "clip_fraction": 0.0,
+          "entropy": 1.6573021113872528,
+          "grad_norm": 0.33863772824406624,
           "loss": -0.023253911058418453,
           "policy_loss": -0.008799100876785815,
-          "value_loss": 0.001431293483619811,
-          "entropy": 1.6573021113872528,
           "prior_kl": 0.028051264584064484,
-          "approx_kl": 0.002287151350174099,
-          "grad_norm": 0.33863772824406624,
-          "clip_fraction": 0.0
+          "train_steps": 1024,
+          "value_loss": 0.001431293483619811
         }
       ]
+    },
+    {
+      "model": "Jev",
+      "learner_seed": 0,
+      "points": [
+        {
+          "approx_kl": 0.000325863034959184,
+          "clip_fraction": 0.0,
+          "entropy": 1.2737995833158493,
+          "grad_norm": 1.109847953543067,
+          "loss": 0.1533223002916202,
+          "policy_loss": -0.004346547648310661,
+          "prior_kl": 0.0002889522133376621,
+          "train_steps": 256,
+          "value_loss": 0.34078478859737515
+        },
+        {
+          "approx_kl": 0.0008276788721559569,
+          "clip_fraction": 0.0,
+          "entropy": 1.180482067167759,
+          "grad_norm": 0.30468225106596947,
+          "loss": -0.015028343215817586,
+          "policy_loss": -0.005923802964389324,
+          "prior_kl": 0.003948089579353109,
+          "train_steps": 512,
+          "value_loss": 0.005005752369470429
+        },
+        {
+          "approx_kl": 0.0018494168416509638,
+          "clip_fraction": 0.009765625,
+          "entropy": 1.1597787514328957,
+          "grad_norm": 0.33253217581659555,
+          "loss": -0.02070577477570623,
+          "policy_loss": -0.011423323769122362,
+          "prior_kl": 0.016254316607955843,
+          "train_steps": 768,
+          "value_loss": 0.003005239945196081
+        },
+        {
+          "approx_kl": 0.002736660466325702,
+          "clip_fraction": 0.025390625,
+          "entropy": 1.1433126628398895,
+          "grad_norm": 0.3655291385948658,
+          "loss": -0.016539156255021226,
+          "policy_loss": -0.008556712477002293,
+          "prior_kl": 0.045657808892428875,
+          "train_steps": 1024,
+          "value_loss": 0.0023355828707281034
+        }
+      ],
+      "updates_artifact": "updates.jsonl",
+      "updates_sha256": "9f90390a53abde65c84b22312cdf7ab75d07341854a68c3f857df3bebc0ab308"
     }
   ],
   "trained_policy": [
@@ -210,10 +276,21 @@
     {
       "model": "Jev + residual PPO",
       "base_model": "Jev",
-      "status": "not_run",
-      "training_battles": null,
-      "validation_battles": null,
-      "test_battles": null
+      "status": "complete",
+      "training_battles": 144,
+      "validation_battles": 10,
+      "test_battles": 18,
+      "train_steps": 1024,
+      "learner_seed": 0,
+      "wins": 18,
+      "truncations": 0,
+      "mean_turns": 1.56,
+      "final_party_hp_percent": 91.6,
+      "battle_score": 94.1,
+      "training_wall_seconds": 1634.46,
+      "test_wall_seconds": 70.36,
+      "checkpoint_sha256": "2d2185ead9e004118f4acba7f184d54c78d64486bb3c1c88f779b002faec4e30",
+      "test_result_sha256": "f62358592200bb31642507b1ee8f8da439f2a13308c5b66d0ed4fe80783c3b2e"
     }
   ]
 }
