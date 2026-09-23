@@ -7,6 +7,58 @@ This repository asks two questions using real trainer battles running in mGBA:
 
 The model is never fine-tuned. Training updates only a small residual PPO policy that steers the model's action probabilities. Uniform random is a zero-shot control and is not trained.
 
+## Watch the models battle
+
+These are real mGBA pixels and real policy samples. The game menu shows the
+available moves; the panel below it shows every legal action probability and
+highlights the sampled action. These first two replays deliberately use
+different held-out battles to show that the benchmark contains different
+Pokémon, moves, opponents, and party choices.
+
+<table>
+  <tr>
+    <th>Laya: Torchic vs Bellsprout</th>
+    <th>PrismNLI: Charmander vs Bruxish</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/laya-zero-shot-test.gif" alt="Laya playing Torchic versus Bellsprout" width="100%"></td>
+    <td><img src="docs/assets/prism-charmander-bruxish.gif" alt="PrismNLI playing Charmander versus Bruxish" width="100%"></td>
+  </tr>
+  <tr>
+    <td>Laya samples Growl, then Ember, and wins in 2 decisions.</td>
+    <td>PrismNLI opens with Growl and Smokescreen, then attacks, winning in 5 decisions.</td>
+  </tr>
+</table>
+
+### Same battle, different decisions
+
+For a fair behavioral comparison, each model below starts from the exact same
+held-out save state, with the same Bulbasaur–Pidgey–Pikachu party facing
+Stunfisk and the same action-sampling seed. Both frozen models win, but they
+take visibly different paths.
+
+<table>
+  <tr>
+    <th>Laya</th>
+    <th>PrismNLI-0.4B</th>
+    <th>Jev</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/laya-bulbasaur-stunfisk.gif" alt="Laya on the shared Bulbasaur versus Stunfisk battle" width="100%"></td>
+    <td><img src="docs/assets/prism-bulbasaur-stunfisk.gif" alt="PrismNLI on the shared Bulbasaur versus Stunfisk battle" width="100%"></td>
+    <td><strong>Real replay pending</strong><br><br>Jev requires a valid OpenRouter credential. This cell remains explicit rather than substituting another model or fabricating its choices.</td>
+  </tr>
+  <tr>
+    <td><strong>10 decisions:</strong> opens with Growth, Leech Seed, Growth; later switches to Pidgey and back.</td>
+    <td><strong>17 decisions:</strong> opens with Leech Seed, switches to Pidgey, then cycles through Pidgey, Pikachu, and Bulbasaur.</td>
+    <td>The same save state and seed will be used when the provider run is available.</td>
+  </tr>
+</table>
+
+The comparison reports sampled behavior, not only each model's highest-probability
+action. Raw probabilities and selected actions are retained in each replay's
+`decisions.jsonl` output.
+
 ## Current results
 
 The reproducible pilot corpus contains **172 saved Rogue battles**:
@@ -242,11 +294,20 @@ uv run rogue-rl visual --prior laya --split test --output runs/visual-laya
 uv run rogue-rl visual --prior jev --split test --output runs/visual-jev
 ```
 
-The GIF uses mGBA's real move-selection menu, including move names, PP, and type. The separate panel shows the model's full legal-action distribution.
+The GIF uses mGBA's real move-selection menu, including move names, PP, and type. The separate panel shows the model's full legal-action distribution. The opening section contains the checked-in examples and the shared-save comparison.
 
-![Laya held-out replay](docs/assets/laya-zero-shot-test.gif)
+Recreate the controlled three-model comparison with the same held-out state and
+sampling seed:
 
-![PrismNLI held-out replay](docs/assets/prism-zero-shot-test.gif)
+```sh
+shared_battle="benchmark-trainer185-rng3279816710-026"
+uv run rogue-rl visual --prior laya --split test --battle-id "$shared_battle" \
+  --seed 0 --output runs/visual-laya-shared
+uv run rogue-rl visual --prior prism --split test --battle-id "$shared_battle" \
+  --seed 0 --output runs/visual-prism-shared
+OPENROUTER_API_KEY="your-key" uv run rogue-rl visual --prior jev --split test \
+  --battle-id "$shared_battle" --seed 0 --output runs/visual-jev-shared
+```
 
 ## Documentation
 
