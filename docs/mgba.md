@@ -126,7 +126,7 @@ uv run rogue-rl verify-game --steps 500
 | Disable/Encore/Choice/Taunt/PP | Mask matches the game's restrictions |
 | Trapped active | No voluntary switches; forced replacement still legal |
 | No usable moves | Slot 0 executes Struggle |
-| Terminal win/loss/draw | One terminal result, no progression into overworld |
+| Terminal win/loss | One terminal result, no progression into overworld; the engine's draw code maps to its single-player loss path |
 | Artificial inference delay | Replay observations/outcome unchanged |
 
 A failed bridge request aborts the run. Frame timeouts are **integration errors**, not losses or truncated training rewards. A policy's decision-count cap is separately recorded as an RL truncation.

@@ -129,7 +129,7 @@ def test_baseline_writes_real_episode_rows_trace_and_summary(tmp_path, monkeypat
     summary = json.loads((output / "summary.json").read_text())
     assert summary["status"] == "complete"
     assert summary["episode_win_rate"] == 0.5
-    assert summary["outcome_counts"] == {"win": 1, "loss": 1, "draw": 0, "truncated": 0}
+    assert summary["outcome_counts"] == {"win": 1, "loss": 1, "truncated": 0}
     assert summary["scenario_bootstrap_ci95"] is not None
     assert summary["model_metrics"]["calls"] == 2
     trace = [json.loads(line) for line in (output / "first-battle-trace.jsonl").read_text().splitlines()]

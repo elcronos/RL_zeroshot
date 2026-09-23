@@ -28,6 +28,7 @@
       "training_battles": 0,
       "test_battles": 18,
       "wins": 18,
+      "truncations": 0,
       "mean_turns": 2.61,
       "final_party_hp_percent": 92.4,
       "battle_score": 92.1
@@ -38,6 +39,7 @@
       "training_battles": 0,
       "test_battles": 18,
       "wins": 18,
+      "truncations": 0,
       "mean_turns": 6.17,
       "final_party_hp_percent": 83.5,
       "battle_score": 85.3
@@ -48,6 +50,7 @@
       "training_battles": 0,
       "test_battles": 18,
       "wins": 18,
+      "truncations": 0,
       "mean_turns": 4.17,
       "final_party_hp_percent": 84.5,
       "battle_score": 87.4
@@ -176,6 +179,7 @@
       "train_steps": 1024,
       "learner_seed": 0,
       "wins": 18,
+      "truncations": 0,
       "mean_turns": 2.72,
       "final_party_hp_percent": 91.6,
       "battle_score": 92.3,
@@ -194,6 +198,7 @@
       "train_steps": 1024,
       "learner_seed": 0,
       "wins": 18,
+      "truncations": 0,
       "mean_turns": 5.39,
       "final_party_hp_percent": 86.3,
       "battle_score": 88.1,

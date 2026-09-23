@@ -20,15 +20,15 @@ total loss values are valid; the component curves and the exact diagnostics in
 `updates.jsonl` SHA-256; `scripts/import_training_curves.py --check` verifies
 the checked-in numbers against local run artifacts.
 
-| Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score | Result |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 2.61 | 92.4% | 92.1 | Complete |
-| Laya zero shot | 0 | 0 | 18 | 18/18 | 6.17 | 83.5% | 85.3 | Complete |
-| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 4.17 | 84.5% | 87.4 | Complete |
-| Jev zero shot | 0 | 0 | 18 | — | — | — | — | Credential required |
-| PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 2.72 | 91.6% | 92.3 | Complete |
-| Laya + residual PPO | 138 | 10 | 18 | 18/18 | 5.39 | 86.3% | 88.1 | Complete |
-| Jev + residual PPO | — | — | — | — | — | — | — | Not run |
+| Model / policy | Training battles | Validation battles | Test battles | Wins | Truncations | Mean turns | Final party HP | Battle score | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 2.61 | 92.4% | 92.1 | Complete |
+| Laya zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 6.17 | 83.5% | 85.3 | Complete |
+| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 4.17 | 84.5% | 87.4 | Complete |
+| Jev zero shot | 0 | 0 | 18 | — | — | — | — | — | Credential required |
+| PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 0/18 | 2.72 | 91.6% | 92.3 | Complete |
+| Laya + residual PPO | 138 | 10 | 18 | 18/18 | 0/18 | 5.39 | 86.3% | 88.1 | Complete |
+| Jev + residual PPO | — | — | — | — | — | — | — | — | Not run |
 
 Training-battle counts are distinct save states actually sampled within the
 fixed decision budget, not the 144-state pool size.
@@ -43,6 +43,13 @@ The frozen model weights were never fine-tuned. A 69,643-parameter residual
 PPO policy was trained for 1,024 decisions with learner seed 0. Laya improved
 from 85.3 to 88.1 battle score, with fewer turns and more party HP. PrismNLI
 was effectively flat at 92.1 versus 92.3, with slightly more turns and less HP.
+That apparent score increase comes from averaging the nonlinear speed term per
+battle. Zero shot contributed 30.02 HP points and 12.10 speed points; the
+residual contributed 29.76 HP points and 12.55 speed points. The residual had
+more zero- and one-turn wins but also several long outliers, so its mean turns
+worsened even though its mean `exp(-turns / 6)` improved. The resulting 92.309
+versus 92.118 difference is mathematically consistent but too small and too
+dependent on this scoring shape to call an improvement.
 The complete two-model local run took 796.56 seconds (13 minutes 17 seconds) on
 a 10-core M1 Max with 64 GB RAM.
 

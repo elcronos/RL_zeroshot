@@ -6,10 +6,12 @@ battle score defined below.
 
 ## 1. Primary: wins on held-out scenario groups
 
-For each saved battle, the game supplies one terminal outcome: win, loss, or
-draw. A decision-limit truncation is reported separately and counts as a
-non-win for the primary rate. For a scenario group `g`, first average repeated
-RNG variants; then give every scenario group equal weight:
+For each saved battle, the benchmark records one terminal outcome: win or
+loss. Emerald's internal simultaneous-exhaustion outcome is treated as a
+single-player defeat by the game itself, so the bridge records it as a loss.
+A decision-limit truncation is reported separately and counts as a non-win for
+the primary rate. For a scenario group `g`, first average repeated RNG
+variants; then give every scenario group equal weight:
 
 ```
 test win rate = mean_g(mean_repeat(terminal outcome is win))
@@ -46,7 +48,7 @@ residual-training comparison.
 
 ## Granular score within a battle outcome
 
-Every terminal battle also receives a **battle score** from 0 to 100. It is a
+Every evaluated episode also receives a **battle score** from 0 to 100. It is a
 readable diagnostic, not PPO's reward and not a replacement for the primary
 win-rate comparison.
 
@@ -62,14 +64,19 @@ battle_score = 50 + 0.5 * win_quality
 The 65/35 split gives survival more importance than speed. A two-turn win with
 the whole party healthy receives about 90/100 quality and 95/100 battle score;
 a ten-turn win with half the party HP receives about 39/100 quality and 70/100
-battle score. Any win still scores above a draw, loss, or truncation:
+battle score. Any win still scores above a loss or truncation:
 
 | Outcome | Battle score |
 | --- | --- |
 | Win | `50 + 0.5 * win_quality` (50–100) |
-| Draw | 25 |
 | Loss | `20 * H` (0–20) |
-| Truncation | 0 |
+| Incomplete (truncated) | 0 |
+
+“Truncated” means the battle did not reach the game's win/loss state before
+the evaluator's fixed 500-decision safety cap. During training only, an active
+battle can also be truncated at a validation boundary so validation starts
+from clean save states. It is an experiment-control event, not a Pokémon
+battle outcome. The reason is stored with every truncated training episode.
 
 This creates the granular explanation you asked for: a policy can win equally
 often but conserve more HP or finish in fewer turns. Report `mean_win_quality`

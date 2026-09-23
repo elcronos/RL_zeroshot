@@ -111,8 +111,15 @@ def test_invalid_observation_contract_rejected(change, match):
         public_observation(raw)
 
 
-@pytest.mark.parametrize("outcome,reward", [("win", 1), ("loss", -1), ("draw", 0)])
+@pytest.mark.parametrize("outcome,reward", [("win", 1), ("loss", -1)])
 def test_terminal_reward_and_empty_terminal_mask(outcome, reward):
     raw = raw_observation()
     raw.update(phase="terminal", outcome=outcome, legal_actions=[False] * 10)
     assert terminal_reward(public_observation(raw)) == reward
+
+
+def test_engine_draw_must_be_mapped_to_single_player_loss_by_bridge():
+    raw = raw_observation()
+    raw.update(phase="terminal", outcome="draw", legal_actions=[False] * 10)
+    with pytest.raises(ValueError, match="win/loss"):
+        public_observation(raw)

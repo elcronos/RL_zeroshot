@@ -65,7 +65,8 @@ local function observation()
         battle_id=battle_id, decision_id=read(4), turn=read(9),
         phase=({[1]="action", [2]="forced_switch", [3]="terminal"})[phase],
         player=mon(12,false), opponent=mon(28,true), party={}, moves={}, legal_actions={},
-        outcome=({[1]="win",[2]="loss",[3]="draw"})[read(10)] or NULL,
+        -- Emerald routes B_OUTCOME_DREW through its single-player defeat path.
+        outcome=({[1]="win",[2]="loss",[3]="loss"})[read(10)] or NULL,
     }
     local legal = read(11)
     for i=1,10 do result.legal_actions[i] = math.floor(legal / 2^(i-1)) % 2 == 1 end

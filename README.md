@@ -74,15 +74,15 @@ and Laya. The full local training, validation, and held-out evaluation took
 **13 minutes 17 seconds** on a 10-core M1 Max with 64 GB RAM. Jev still needs a
 valid OpenRouter credential, so its rows remain explicit rather than inferred.
 
-| Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 2.61 | 92.4% | 92.1 / 100 |
-| Laya zero shot | 0 | 0 | 18 | 18/18 | 6.17 | 83.5% | 85.3 / 100 |
-| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 4.17 | 84.5% | 87.4 / 100 |
-| Jev zero shot | 0 | 0 | 18 | — | — | — | Not run |
-| PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 2.72 | 91.6% | 92.3 / 100 |
-| Laya + residual PPO | 138 | 10 | 18 | 18/18 | 5.39 | 86.3% | 88.1 / 100 |
-| Jev + residual PPO | — | — | — | — | — | — | Not run |
+| Model / policy | Training battles | Validation battles | Test battles | Wins | Truncations | Mean turns | Final party HP | Battle score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 2.61 | 92.4% | 92.1 / 100 |
+| Laya zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 6.17 | 83.5% | 85.3 / 100 |
+| Uniform random zero shot | 0 | 0 | 18 | 18/18 | 0/18 | 4.17 | 84.5% | 87.4 / 100 |
+| Jev zero shot | 0 | 0 | 18 | — | — | — | — | Not run |
+| PrismNLI + residual PPO | 144 | 10 | 18 | 18/18 | 0/18 | 2.72 | 91.6% | 92.3 / 100 |
+| Laya + residual PPO | 138 | 10 | 18 | 18/18 | 0/18 | 5.39 | 86.3% | 88.1 / 100 |
+| Jev + residual PPO | — | — | — | — | — | — | — | Not run |
 
 “Training battles” is the number of distinct save states actually sampled.
 With the same 1,024-decision budget, Laya visited 138 and PrismNLI visited all
@@ -113,8 +113,12 @@ All completed arms won every test battle, so win rate alone cannot separate
 them. Laya's learned policy improved its mean score from 85.3 to 88.1, reduced
 turns from 6.17 to 5.39, and retained more party HP. PrismNLI was essentially
 flat: its score moved from 92.1 to 92.3 while turns and HP became slightly
-worse. These are single-seed descriptive results, not evidence of a robust
-effect or general Pokémon mastery.
+worse. Its score is the mean of per-battle nonlinear values: the residual had
+more zero- and one-turn wins, but also a few long outliers that made arithmetic
+mean turns worse. Its mean exponential speed component rose enough to offset
+the lower HP component by 0.19 score points. This is a scoring-shape effect,
+not evidence of a meaningful improvement. These are single-seed descriptive
+results, not evidence of a robust effect or general Pokémon mastery.
 
 ## Experiment
 
@@ -169,14 +173,20 @@ win_quality = 100 × (0.65 × H + 0.35 × exp(-T / 6))
 battle_score = 50 + 0.5 × win_quality
 ```
 
-This makes a two-turn full-health win score much better than a ten-turn win at half health, while every win still scores above a draw, loss, or truncation.
+This makes a two-turn full-health win score much better than a ten-turn win at half health, while every win still scores above a loss or incomplete run.
 
 | Outcome | Battle score |
 | --- | --- |
 | Win | 50–100, based on party HP and turns |
-| Draw | 25 |
 | Loss | 0–20, based on remaining party HP |
-| Truncation | 0 |
+| Incomplete (truncated) | 0 |
+
+Emerald has an internal `B_OUTCOME_DREW` value for both sides running out of
+Pokémon together, but its single-player code treats that as player defeat. The
+bridge therefore records it as a loss. A truncation is not a game result: it
+means the evaluator stopped an unfinished battle at the fixed 500-decision cap.
+Final test tables report the truncation rate separately; it was 0/18 for every
+completed arm.
 
 The final table always reports raw wins, turns, party HP, and battle score so the scalar can be audited. Latency, action diversity, switch rate, residual KL, and argmax override rate are additional diagnostics.
 

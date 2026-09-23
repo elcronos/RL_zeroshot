@@ -25,7 +25,7 @@ def baseline_summary(
         raise ValueError("Invalid baseline plan or status")
     if len(rows) > planned_episodes or (status == "complete" and len(rows) != planned_episodes):
         raise ValueError("Completed baseline rows do not match the planned run")
-    outcomes = {name: 0 for name in ("win", "loss", "draw", "truncated")}
+    outcomes = {name: 0 for name in ("win", "loss", "truncated")}
     groups: dict[str, list[float]] = defaultdict(list)
     keys = set()
     for row in rows:

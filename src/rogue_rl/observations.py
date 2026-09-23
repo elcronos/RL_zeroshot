@@ -52,8 +52,8 @@ def public_observation(raw: Mapping[str, Any]) -> dict[str, Any]:
     if phase == "forced_switch" and any(legal[:4]):
         raise ValueError("Moves cannot be legal during a forced switch")
     outcome = raw.get("outcome")
-    if phase == "terminal" and outcome not in {"win", "loss", "draw"}:
-        raise ValueError("Terminal battle requires win/loss/draw outcome")
+    if phase == "terminal" and outcome not in {"win", "loss"}:
+        raise ValueError("Terminal battle requires a win/loss outcome")
     if phase != "terminal" and outcome is not None:
         raise ValueError("Nonterminal battle cannot have an outcome")
     party, moves = raw.get("party", []), raw.get("moves", [])
@@ -153,4 +153,4 @@ class FeatureEncoder:
 
 def terminal_reward(obs: Mapping[str, Any]) -> float:
     """Sparse win/loss reward avoids shaping-induced strategic confounds."""
-    return {"win": 1.0, "loss": -1.0, "draw": 0.0, None: 0.0}[obs["outcome"]]
+    return {"win": 1.0, "loss": -1.0, None: 0.0}[obs["outcome"]]

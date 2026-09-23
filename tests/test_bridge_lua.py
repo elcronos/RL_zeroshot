@@ -39,6 +39,7 @@ function server:accept() return client end
 function server:poll() if accept_callback then local fn=accept_callback;accept_callback=nil;fn() end end
 socket={ERRORS={AGAIN="again"},bind=function() return server end}
 dofile(BRIDGE_PATH)
+local terminal_outcome=1
 local function core()
  if mem[2]==1 and mem[3]==0 then
   mem[4]=mem[4]+1;mem[3]=1;mem[11]=1
@@ -47,7 +48,7 @@ local function core()
    for i=8,14 do mem[offset+i]=6 end
   end
  end
- if mem[7]==1 then mem[7]=0;mem[4]=mem[4]+1;mem[3]=3;mem[10]=1;mem[11]=0 end
+ if mem[7]==1 then mem[7]=0;mem[4]=mem[4]+1;mem[3]=3;mem[10]=terminal_outcome;mem[11]=0 end
 end
 local function send(line)
  table.insert(queue,line); frame();core();frame()
@@ -56,13 +57,16 @@ send("HELLO\t1\n")
 send("RESET\t2\t626174746c65\t2f746d702f7374617465\t100\n")
 send("STEP\t3\t0\t0\t100\n") -- stale decision must reject
 send("STEP\t4\t1\t0\t100\n")
+terminal_outcome=3
+send("RESET\t5\t626174746c6532\t2f746d702f7374617465\t100\n")
+send("STEP\t6\t1\t0\t100\n")
 for _,value in ipairs(outputs) do io.write(value) end
 """.replace("BRIDGE_PATH", json.dumps(str(bridge)))
     path = tmp_path / "fixture.lua"
     path.write_text(harness)
     result = subprocess.run([lua, str(path)], check=True, capture_output=True, text=True, timeout=5)
     rows = [json.loads(line) for line in result.stdout.splitlines()]
-    assert len(rows) == 4
+    assert len(rows) == 6
     assert rows[0]["result"]["protocol"] == 1
     assert rows[1]["result"]["player"]["stat_stages"] == [6] * 7
     assert rows[1]["result"]["opponent"]["hp_fraction"] == 0.5
@@ -70,3 +74,4 @@ for _,value in ipairs(outputs) do io.write(value) end
     assert rows[2]["error"] == "stale_decision"
     assert rows[3]["result"]["outcome"] == "win"
     assert rows[3]["result"]["legal_actions"] == [False] * 10
+    assert rows[5]["result"]["outcome"] == "loss"
