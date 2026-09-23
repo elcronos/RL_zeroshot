@@ -17,6 +17,7 @@ from .manifest import Corpus, sha256_file
 from .observations import FEATURE_DIM, FEATURE_VERSION, FeatureEncoder, public_observation, terminal_reward
 from .policy import ActorCritic
 from .ppo import PPOConfig, PPOTrainer, Rollout
+from .scoring import battle_quality
 
 
 class Environment(Protocol):
@@ -188,6 +189,8 @@ def evaluate(
                     for mon in party
                     if mon.get("species") and float(mon.get("max_hp", 0)) > 0
                 ]
+                final_party_hp_fraction = float(np.mean(fractions)) if fractions else None
+                quality = battle_quality(obs["outcome"] if obs["phase"] == "terminal" else "truncated", final_party_hp_fraction, obs["turn"])
                 row = {
                     "battle_id": battle["id"],
                     "scenario_group": battle["scenario_group"],
@@ -199,9 +202,11 @@ def evaluate(
                     "outcome": obs["outcome"] if obs["phase"] == "terminal" else "truncated",
                     "return": terminal_reward(obs),
                     "decisions": decisions,
+                    "turns": obs["turn"],
                     "distinct_actions": len(set(actions)),
                     "switch_action_rate": float(np.mean([action >= 4 for action in actions])) if actions else 0.0,
-                    "final_party_hp_fraction": float(np.mean(fractions)) if fractions else None,
+                    "final_party_hp_fraction": final_party_hp_fraction,
+                    **quality,
                     "wall_seconds": time.perf_counter() - start,
                     "mean_prior_kl": float(np.mean(kls)) if kls else 0,
                     "argmax_override_rate": float(np.mean(changes)) if changes else 0,

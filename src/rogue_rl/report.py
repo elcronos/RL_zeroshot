@@ -59,6 +59,18 @@ def baseline_summary(
             else "Percentile bootstrap over scenario groups (2000 draws); exploratory with few groups."
         ),
         "mean_decisions": float(np.mean([row["decisions"] for row in rows])) if rows else None,
+        "mean_turns": float(np.mean([row["turns"] for row in rows])) if rows else None,
+        "mean_final_party_hp_fraction": (
+            float(np.mean([row["final_party_hp_fraction"] for row in rows if row["final_party_hp_fraction"] is not None]))
+            if any(row["final_party_hp_fraction"] is not None for row in rows)
+            else None
+        ),
+        "mean_win_quality": (
+            float(np.mean([row["win_quality"] for row in rows if row["win_quality"] is not None]))
+            if any(row["win_quality"] is not None for row in rows)
+            else None
+        ),
+        "mean_battle_score": float(np.mean([row["battle_score"] for row in rows])) if rows else None,
         "mean_wall_seconds": float(np.mean([row["wall_seconds"] for row in rows])) if rows else None,
         "median_battle_decision_ms_p50": (
             float(np.median([row["decision_ms_p50"] for row in rows])) if rows else None

@@ -1,7 +1,8 @@
 # How a policy scores better
 
-There is no hidden composite reward score in this benchmark. A model is judged
-by a predeclared sequence of held-out measures, in this order.
+There is no hidden reward score in this benchmark. A model is judged by a
+predeclared sequence of held-out measures, including the explicit diagnostic
+battle score defined below.
 
 ## 1. Primary: wins on held-out scenario groups
 
@@ -41,6 +42,38 @@ rank the models. That is the current pilot outcome: Laya, PrismNLI, and uniform
 all won 18/18 held-out episodes. It means the fixture is too easy, not that
 the models are equally capable. Collect harder states before interpreting a
 residual-training comparison.
+
+## Granular score within a battle outcome
+
+Every terminal battle also receives a **battle score** from 0 to 100. It is a
+readable diagnostic, not PPO's reward and not a replacement for the primary
+win-rate comparison.
+
+For a win, calculate the final fraction of HP across the player party (`H`) and
+the game-reported battle turns (`T`). Six turns is the declared reference
+length. The within-win quality is:
+
+```
+win_quality = 100 * (0.65 * H + 0.35 * exp(-T / 6))
+battle_score = 50 + 0.5 * win_quality
+```
+
+The 65/35 split gives survival more importance than speed. A two-turn win with
+the whole party healthy receives about 90/100 quality and 95/100 battle score;
+a ten-turn win with half the party HP receives about 39/100 quality and 70/100
+battle score. Any win still scores above a draw, loss, or truncation:
+
+| Outcome | Battle score |
+| --- | --- |
+| Win | `50 + 0.5 * win_quality` (50–100) |
+| Draw | 25 |
+| Loss | `20 * H` (0–20) |
+| Truncation | 0 |
+
+This creates the granular explanation you asked for: a policy can win equally
+often but conserve more HP or finish in fewer turns. Report `mean_win_quality`
+only over wins and `mean_battle_score` over all episodes, alongside the raw
+outcome counts.
 
 ## 3. Secondary diagnostics
 

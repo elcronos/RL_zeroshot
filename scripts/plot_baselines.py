@@ -23,7 +23,7 @@ def main() -> None:
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
     draw.text((30, 26), "Held-out zero-shot Rogue battles", fill="white", font=font)
-    draw.text((30, 46), "Win rate ceiling is visible; lower decisions are descriptive, not a quality ranking.", fill="#b9c6d8", font=font)
+    draw.text((30, 46), "Win rate ceiling is visible; battle score summarizes retained HP and game turns.", fill="#b9c6d8", font=font)
     colors = {"laya": "#6ee7b7", "prism": "#93c5fd", "uniform": "#fbbf24", "jev": "#fda4af"}
     for index, (name, summary) in enumerate(rows):
         y = 100 + 70 * index
@@ -32,8 +32,9 @@ def main() -> None:
         draw.rectangle((180, y, 680, y + 20), fill="#1f2937")
         draw.rectangle((180, y, 180 + int(500 * win), y + 20), fill=colors.get(name, "#d1d5db"))
         draw.text((700, y), f"{win:.0%} wins", fill="white", font=font)
-        draw.text((180, y + 30), f"mean decisions {summary['mean_decisions']:.2f}", fill="#b9c6d8", font=font)
-        draw.text((430, y + 30), f"p50 decision {summary['median_battle_decision_ms_p50']:.2f} ms", fill="#b9c6d8", font=font)
+        draw.text((180, y + 30), f"battle score {summary['mean_battle_score']:.1f}/100", fill="#b9c6d8", font=font)
+        draw.text((400, y + 30), f"turns {summary['mean_turns']:.2f}", fill="#b9c6d8", font=font)
+        draw.text((570, y + 30), f"party HP {100 * summary['mean_final_party_hp_fraction']:.1f}%", fill="#b9c6d8", font=font)
     panel_y = 120 + 70 * len(rows)
     draw.rectangle((30, panel_y, 910, panel_y + 84), outline="#475569", width=2)
     draw.text((50, panel_y + 16), "POLICY LEARNING / RESIDUAL PPO", fill="white", font=font)
