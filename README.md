@@ -92,6 +92,23 @@ With the same 1,024-decision budget, Laya visited 138 and PrismNLI visited all
 
 ![Frozen model versus trained policy](docs/assets/trained-policy-performance.png)
 
+![PPO training loss over policy decisions](docs/assets/training-loss.png)
+
+Each point is the mean over the PPO epochs and minibatches for one fresh
+256-decision rollout. The combined objective is:
+
+```text
+loss = policy_loss + 0.5 × value_loss - 0.01 × entropy + 0.05 × KL(policy || frozen_prior)
+```
+
+This is an on-policy diagnostic rather than a supervised loss curve: every
+point uses a different rollout, advantage estimate, and value target, so the
+total need not decrease monotonically and negative values are valid. The chart
+therefore also shows policy and value loss separately. Exact entropy, KL,
+gradient norm, and clipping measurements are retained in
+[`docs/results.json`](docs/results.json), together with the SHA-256 of each raw
+`updates.jsonl` log.
+
 All completed arms won every test battle, so win rate alone cannot separate
 them. Laya's learned policy improved its mean score from 85.3 to 88.1, reduced
 turns from 6.17 to 5.39, and retained more party HP. PrismNLI was essentially
@@ -295,9 +312,14 @@ seed, report the observed wins, turns, party HP, battle score, and wall time
 without a confidence interval. A longer multi-seed study is useful for a paper,
 but is outside this repository's 30-minute default.
 
-Update the checked-in result registry from verified run summaries, then rebuild both publication plots:
+Import the raw PPO update logs into the checked-in registry, or add `--check`
+to the first command to verify an existing import without changing it. Then
+rebuild the evaluation and training-loss publication plots:
 
 ```sh
+uv run python scripts/import_training_curves.py \
+  --curve 'Laya=runs/laya-residual-0/updates.jsonl' \
+  --curve 'PrismNLI-0.4B=runs/prism-residual-0/updates.jsonl'
 uv run python scripts/plot_results.py \
   --results docs/results.json --output-dir docs/assets
 ```

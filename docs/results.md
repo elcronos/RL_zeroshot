@@ -9,6 +9,17 @@ six declared player teams.
 
 ![Frozen models versus trained policies](assets/trained-policy-performance.png)
 
+![PPO training loss over policy decisions](assets/training-loss.png)
+
+The training chart reports the four 256-decision PPO updates for learner seed
+0. The combined objective adds policy loss, `0.5 × value_loss`,
+`-0.01 × entropy`, and `0.05 × KL(policy || frozen_prior)`. Every point uses a
+new on-policy batch, so it is not expected to decrease monotonically. Negative
+total loss values are valid; the component curves and the exact diagnostics in
+`results.json` make the behavior auditable. Each curve also records its raw
+`updates.jsonl` SHA-256; `scripts/import_training_curves.py --check` verifies
+the checked-in numbers against local run artifacts.
+
 | Model / policy | Training battles | Validation battles | Test battles | Wins | Mean turns | Final party HP | Battle score | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | PrismNLI-0.4B zero shot | 0 | 0 | 18 | 18/18 | 2.61 | 92.4% | 92.1 | Complete |

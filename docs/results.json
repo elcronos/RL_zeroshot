@@ -59,6 +59,112 @@
       "test_battles": 18
     }
   ],
+  "training_curves": [
+    {
+      "model": "Laya",
+      "learner_seed": 0,
+      "updates_artifact": "updates.jsonl",
+      "updates_sha256": "cb783fde0d6b07cca494734f2c9c3aa3cde5bc122c64922328c2915b34c76a1c",
+      "points": [
+        {
+          "train_steps": 256,
+          "loss": 0.10196508350782096,
+          "policy_loss": -0.002033791271969676,
+          "value_loss": 0.23891749326139688,
+          "entropy": 1.5464374795556068,
+          "prior_kl": 8.997214799560949e-05,
+          "approx_kl": 0.00010946868860628456,
+          "grad_norm": 0.9973016567528248,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 512,
+          "loss": -0.01583475264487788,
+          "policy_loss": -0.003467857837677002,
+          "value_loss": 0.005143750415300019,
+          "entropy": 1.4982144981622696,
+          "prior_kl": 0.0008674934069858864,
+          "approx_kl": 0.00028822604508604854,
+          "grad_norm": 0.29436930175870657,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 768,
+          "loss": 0.03294688218738884,
+          "policy_loss": -0.0007638800889253616,
+          "value_loss": 0.09724602045025676,
+          "entropy": 1.5072695910930634,
+          "prior_kl": 0.003208927024388686,
+          "approx_kl": 0.0002606601774459705,
+          "grad_norm": 0.3140830807387829,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 1024,
+          "loss": -0.01745671006210614,
+          "policy_loss": -0.003999599954113364,
+          "value_loss": 0.0041501935047563165,
+          "entropy": 1.588847503066063,
+          "prior_kl": 0.0071253913920372725,
+          "approx_kl": 0.000454921304481104,
+          "grad_norm": 0.3210061751306057,
+          "clip_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "PrismNLI-0.4B",
+      "learner_seed": 0,
+      "updates_artifact": "updates.jsonl",
+      "updates_sha256": "f052ae2b5f8a4d8e25498bdad74f50ef214668b3b6bd68f3f0ded19626d2a436",
+      "points": [
+        {
+          "train_steps": 256,
+          "loss": 0.11880184791516513,
+          "policy_loss": -0.005155384656973183,
+          "value_loss": 0.2821139091392979,
+          "entropy": 1.7113729491829872,
+          "prior_kl": 0.0002801288189003548,
+          "approx_kl": 0.00028784398455172777,
+          "grad_norm": 1.1850156113505363,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 512,
+          "loss": -0.015822963003301993,
+          "policy_loss": -0.002034480683505535,
+          "value_loss": 0.005993982995278202,
+          "entropy": 1.69338858127594,
+          "prior_kl": 0.0029682276872335933,
+          "approx_kl": 0.0003815069794654846,
+          "grad_norm": 0.3324913112446666,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 768,
+          "loss": -0.022960978327319026,
+          "policy_loss": -0.007550545269623399,
+          "value_loss": 0.0022193962322489824,
+          "entropy": 1.6988220438361168,
+          "prior_kl": 0.00936179401469417,
+          "approx_kl": 0.0011636264389380813,
+          "grad_norm": 0.34066008031368256,
+          "clip_fraction": 0.0
+        },
+        {
+          "train_steps": 1024,
+          "loss": -0.023253911058418453,
+          "policy_loss": -0.008799100876785815,
+          "value_loss": 0.001431293483619811,
+          "entropy": 1.6573021113872528,
+          "prior_kl": 0.028051264584064484,
+          "approx_kl": 0.002287151350174099,
+          "grad_norm": 0.33863772824406624,
+          "clip_fraction": 0.0
+        }
+      ]
+    }
+  ],
   "trained_policy": [
     {
       "model": "PrismNLI-0.4B + residual PPO",
